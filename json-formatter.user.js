@@ -3,14 +3,14 @@
 // @namespace http://gerald.top
 // @description Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version 1.0
+// @version 1.0.1
 // @match *://*/*
 // @grant GM_addStyle
 // @grant GM_registerMenuCommand
 // ==/UserScript==
 
 function safeHTML(html) {
-  return html.replace(/[<&]/g, function (key) {
+  return String(html).replace(/[<&]/g, function (key) {
     return {
       '<': '&lt;',
       '&': '&amp;',
@@ -47,7 +47,7 @@ function join(list) {
 }
 
 function getHtml(data, cls) {
-  return '<span class="' + (cls || typeof data) + '">' + data + '</span>';
+  return '<span class="' + (cls || typeof data) + '">' + safeHTML(data) + '</span>';
 }
 
 function render(data) {
