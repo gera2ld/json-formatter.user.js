@@ -3,17 +3,18 @@
 // @namespace http://gerald.top
 // @description Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version 1.0.1
+// @version 1.1
 // @match *://*/*
 // @grant GM_addStyle
 // @grant GM_registerMenuCommand
 // ==/UserScript==
 
 function safeHTML(html) {
-  return String(html).replace(/[<&]/g, function (key) {
+  return String(html).replace(/[<&"]/g, function (key) {
     return {
       '<': '&lt;',
       '&': '&amp;',
+      '"': '&quote;',
     }[key];
   });
 }
@@ -47,7 +48,10 @@ function join(list) {
 }
 
 function getHtml(data, cls) {
-  return '<span class="' + (cls || typeof data) + '">' + safeHTML(data) + '</span>';
+  var html = '<span class="' + (cls || 'value ' + typeof data) + '" ' +
+    'data-type="' + safeHTML(typeof data) + '" ' +
+    'data-value="' + safeHTML(data) + '">' + safeHTML(data) + '</span>';
+  return html;
 }
 
 function render(data) {
@@ -71,7 +75,7 @@ function render(data) {
     ret.data = arr.join('');
     return ret;
   } else if (data === null)
-    return {data: getHtml('null', 'null'), backwards: true};
+    return {data: getHtml('null', 'value null'), backwards: true};
   else if (typeof data == 'object') {
     var arr = [];
     var ret = {
@@ -116,19 +120,63 @@ function formatJSON() {
       config.raw = document.body.innerHTML;
       config.data = JSON.parse(document.body.innerText);
       config.style = GM_addStyle(
+        '*{font-family:Microsoft YaHei,Tahoma;font-size:15px;}' +
         'ul.root{padding-left:0;}' +
         'li{list-style:none;}' +
         '.separator{margin-right:.5em;}' +
         '.number{color:darkorange;}' +
         '.key{color:brown;}' +
         '.string{color:green;}' +
-        '.operator{color:blue;}'
+        '.operator{color:blue;}' +
+        '.value{position:relative;}' +
+        '.popup{position:absolute;top:0;left:0;right:0;bottom:0;}' +
+        '.popup-data{position:absolute;top:0;left:0;width:100%;bottom:0;border:none;cursor:pointer;box-sizing:content-box;padding:2px;margin:-2px;outline:1px dotted gray;}' +
+        '.popup-info{position:absolute;top:100%;margin-top:.5em;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}' +
+        '.info-key{font-weight:bold;}' +
+        '.info-val{color:dodgerblue;}' +
+        '.hide{display:none;}'
       );
     }
     var ret = render(config.data);
     document.body.innerHTML = '<ul class="root"><li>' + ret.data + '</li></ul>';
     config.formatted = true;
+    bindEvents(document.body.querySelector('.root'));
   }
+}
+
+function bindEvents(root) {
+  var popup = document.createElement('div');
+  popup.className = 'popup hide';
+  var input = document.createElement('input');
+  input.className = 'popup-data';
+  input.readOnly = true;
+  popup.appendChild(input);
+  var info = document.createElement('div');
+  info.className = 'popup-info';
+  popup.appendChild(info);
+  var hide = function () {
+    popup.classList.add('hide');
+  };
+  input.addEventListener('mouseup', function (e) {
+    e.preventDefault();
+    this.select();
+  }, false);
+  popup.addEventListener('click', function (e) {
+    e.stopPropagation();
+  }, false);
+  root.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var target = e.target;
+    if (target.dataset.type) {
+      target.appendChild(popup);
+      popup.classList.remove('hide');
+      input.value = target.dataset.value || '';
+      input.select();
+      input.focus();
+      info.innerHTML = '<span class="info-key">type</span>: <span class="info-val">' + safeHTML(target.dataset.type) + '</span>';
+    } else hide();
+  }, false);
+  document.addEventListener('click', hide, false);
 }
 
 var config = {};
