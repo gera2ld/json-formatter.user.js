@@ -136,6 +136,7 @@ function formatJSON() {
         '.info-val{color:dodgerblue;}' +
         '.hide{display:none;}'
       );
+      initPopup();
     }
     var ret = render(config.data);
     document.body.innerHTML = '<ul class="root"><li>' + ret.data + '</li></ul>';
@@ -144,9 +145,9 @@ function formatJSON() {
   }
 }
 
-function bindEvents(root) {
+function initPopup() {
   var popup = document.createElement('div');
-  popup.className = 'popup hide';
+  popup.className = 'popup';
   var input = document.createElement('input');
   input.className = 'popup-data';
   input.readOnly = true;
@@ -155,7 +156,8 @@ function bindEvents(root) {
   info.className = 'popup-info';
   popup.appendChild(info);
   var hide = function () {
-    popup.classList.add('hide');
+    var parent = popup.parentNode;
+    if (parent) parent.removeChild(popup);
   };
   input.addEventListener('mouseup', function (e) {
     e.preventDefault();
@@ -164,19 +166,29 @@ function bindEvents(root) {
   popup.addEventListener('click', function (e) {
     e.stopPropagation();
   }, false);
-  root.addEventListener('click', function (e) {
-    e.stopPropagation();
-    var target = e.target;
-    if (target.dataset.type) {
+  document.addEventListener('click', hide, false);
+  config.popup = {
+    node: popup,
+    hide: hide,
+    show: function (target) {
       target.appendChild(popup);
-      popup.classList.remove('hide');
       input.value = target.dataset.value || '';
       input.select();
       input.focus();
       info.innerHTML = '<span class="info-key">type</span>: <span class="info-val">' + safeHTML(target.dataset.type) + '</span>';
-    } else hide();
+    },
+  };
+}
+
+function bindEvents(root) {
+  root.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var target = e.target;
+    if (target.dataset.type)
+      config.popup.show(target);
+    else
+      config.popup.hide();
   }, false);
-  document.addEventListener('click', hide, false);
 }
 
 var config = {};
