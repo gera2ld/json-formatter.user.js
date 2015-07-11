@@ -3,7 +3,7 @@
 // @namespace http://gerald.top
 // @description Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version 1.1
+// @version 1.1.1
 // @match *://*/*
 // @grant GM_addStyle
 // @grant GM_registerMenuCommand
@@ -128,7 +128,7 @@ function formatJSON() {
         '.key{color:brown;}' +
         '.string{color:green;}' +
         '.operator{color:blue;}' +
-        '.value{position:relative;}' +
+        '.value{position:relative;cursor:pointer;}' +
         '.popup{position:absolute;top:0;left:0;right:0;bottom:0;}' +
         '.popup-data{position:absolute;top:0;left:0;width:100%;bottom:0;border:none;cursor:pointer;box-sizing:content-box;padding:2px;margin:-2px;outline:1px dotted gray;}' +
         '.popup-info{position:absolute;top:100%;margin-top:.5em;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}' +
@@ -184,7 +184,7 @@ function bindEvents(root) {
   root.addEventListener('click', function (e) {
     e.stopPropagation();
     var target = e.target;
-    if (target.dataset.type)
+    if (target.classList.contains('value'))
       config.popup.show(target);
     else
       config.popup.hide();
