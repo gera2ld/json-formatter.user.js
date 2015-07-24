@@ -3,7 +3,7 @@
 // @namespace http://gerald.top
 // @description Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version 1.1.1
+// @version 1.1.2
 // @match *://*/*
 // @grant GM_addStyle
 // @grant GM_registerMenuCommand
@@ -69,7 +69,7 @@ function render(data) {
       arr.push('</ul>');
     } else {
       arr.push(getHtml('', 'separator'));
-      ret.backwards = ret.forwards = false;
+      ret.forwards = false;
     }
     arr.push(getHtml(']', 'operator'));
     ret.data = arr.join('');
