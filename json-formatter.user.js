@@ -47,10 +47,10 @@ function join(list) {
   return html.join('');
 }
 
-function getHtml(data, cls) {
-  var html = '<span class="' + (cls || 'value ' + typeof data) + '" ' +
-    'data-type="' + safeHTML(typeof data) + '" ' +
-    'data-value="' + safeHTML(data) + '">' + safeHTML(data) + '</span>';
+function getHtml(data) {
+  var html = '<span class="' + (data.cls || 'value ' + typeof data.value) + '" ' +
+    'data-type="' + safeHTML(data.type || typeof data.value) + '" ' +
+    'data-value="' + safeHTML(data.value) + '">' + safeHTML(data.value) + '</span>';
   return html;
 }
 
@@ -60,36 +60,36 @@ function render(data) {
     var ret = {
       backwards: true,
       forwards: true,
-      separator: getHtml(',', 'separator'),
+      separator: getHtml({value: ',', cls: 'separator'}),
     };
-    arr.push(getHtml('[', 'operator'));
+    arr.push(getHtml({value: '[', cls: 'operator'}));
     if (data.length) {
       arr.push('<ul>');
       arr.push(join(data.map(render)));
       arr.push('</ul>');
     } else {
-      arr.push(getHtml('', 'separator'));
+      arr.push(getHtml({value: '', cls: 'separator'}));
       ret.forwards = false;
     }
-    arr.push(getHtml(']', 'operator'));
+    arr.push(getHtml({value: ']', cls: 'operator'}));
     ret.data = arr.join('');
     return ret;
   } else if (data === null)
-    return {data: getHtml('null', 'value null'), backwards: true};
+    return {data: getHtml({value: data, cls: 'value null'}), backwards: true};
   else if (typeof data == 'object') {
     var arr = [];
     var ret = {
       backwards: true,
       forwards: true,
-      separator: getHtml(',', 'separator'),
+      separator: getHtml({value: ',', cls: 'separator'}),
     };
-    arr.push(getHtml('{', 'operator'));
+    arr.push(getHtml({value: '{', cls: 'operator'}));
     var objdata = [];
     for (var key in data) {
       objdata.push({
-        data: getHtml(key, 'key'),
+        data: getHtml({value: key, cls: 'key'}),
         forwards: true,
-        separator: getHtml(':', 'separator'),
+        separator: getHtml({value: ':', cls: 'separator'}),
       });
       objdata.push(render(data[key]));
     }
@@ -98,16 +98,16 @@ function render(data) {
       arr.push(join(objdata));
       arr.push('</ul>');
     } else {
-      arr.push(getHtml('', 'separator'));
+      arr.push(getHtml({value: '', cls: 'separator'}));
       ret.backwards = ret.forwards = false;
     }
-    arr.push(getHtml('}', 'operator'));
+    arr.push(getHtml({value: '}', cls: 'operator'}));
     ret.data = arr.join('');
     return ret;
   } else
     return {
       backwards: true,
-      data: getHtml(data),
+      data: getHtml({value: data}),
     };
 }
 
@@ -125,6 +125,7 @@ function formatJSON() {
         'li{list-style:none;}' +
         '.separator{margin-right:.5em;}' +
         '.number{color:darkorange;}' +
+        '.null{color:gray;}' +
         '.key{color:brown;}' +
         '.string{color:green;}' +
         '.operator{color:blue;}' +
