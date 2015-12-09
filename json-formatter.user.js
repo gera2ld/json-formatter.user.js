@@ -3,7 +3,7 @@
 // @namespace http://gerald.top
 // @description Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version 1.1.4
+// @version 1.1.5
 // @match *://*/*
 // @grant GM_addStyle
 // @grant GM_registerMenuCommand
@@ -130,9 +130,7 @@ function formatJSON() {
         '.string{color:green;}' +
         '.operator{color:blue;}' +
         '.value{position:relative;cursor:pointer;}' +
-        '.popup{position:absolute;top:0;left:0;right:0;bottom:0;}' +
-        '.popup-data{position:absolute;top:0;left:0;width:100%;bottom:0;border:none;cursor:pointer;box-sizing:content-box;padding:2px;margin:-2px;outline:1px dotted gray;}' +
-        '.popup-info{position:absolute;top:100%;margin-top:.5em;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}' +
+        '.popup{position:absolute;top:100%;margin-top:.5em;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}' +
         '.info-key{font-weight:bold;}' +
         '.info-val{color:dodgerblue;}' +
         '.hide{display:none;}'
@@ -147,23 +145,12 @@ function formatJSON() {
 }
 
 function initPopup() {
-  var popup = document.createElement('div');
-  popup.className = 'popup';
-  var input = document.createElement('input');
-  input.className = 'popup-data';
-  input.readOnly = true;
-  popup.appendChild(input);
-  var info = document.createElement('div');
-  info.className = 'popup-info';
-  popup.appendChild(info);
-  var hide = function () {
+  function hide() {
     var parent = popup.parentNode;
     if (parent) parent.removeChild(popup);
-  };
-  input.addEventListener('mouseup', function (e) {
-    e.preventDefault();
-    this.select();
-  }, false);
+  }
+  var popup = document.createElement('div');
+  popup.className = 'popup';
   popup.addEventListener('click', function (e) {
     e.stopPropagation();
   }, false);
@@ -173,21 +160,28 @@ function initPopup() {
     hide: hide,
     show: function (target) {
       target.appendChild(popup);
-      input.value = target.dataset.value || '';
-      input.select();
-      input.focus();
-      info.innerHTML = '<span class="info-key">type</span>: <span class="info-val">' + safeHTML(target.dataset.type) + '</span>';
+      popup.innerHTML = '<span class="info-key">type</span>: <span class="info-val">' + safeHTML(target.dataset.type) + '</span>';
     },
   };
+}
+
+function selectNode(node) {
+  var selection = window.getSelection();
+  selection.removeAllRanges();
+  var range = document.createRange();
+  range.setStartBefore(node.firstChild);
+  range.setEndAfter(node.firstChild);
+  selection.addRange(range);
 }
 
 function bindEvents(root) {
   root.addEventListener('click', function (e) {
     e.stopPropagation();
     var target = e.target;
-    if (target.classList.contains('value'))
+    if (target.classList.contains('value')) {
+      selectNode(target);
       config.popup.show(target);
-    else
+    } else
       config.popup.hide();
   }, false);
 }
