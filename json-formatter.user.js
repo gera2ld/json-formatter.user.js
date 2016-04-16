@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name JSON formatter
 // @namespace http://gerald.top
+// @author  Gerald <i@gerald.top>
+// @icon  http://cn.gravatar.com/avatar/a0ad718d86d21262ccd6ff271ece08a3?s=80
 // @description Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version 1.1.5
+// @version 1.1.6
 // @match *://*/*
 // @grant GM_addStyle
 // @grant GM_registerMenuCommand
@@ -121,7 +123,8 @@ function formatJSON() {
       config.data = JSON.parse(document.body.innerText);
       config.style = GM_addStyle(
         '*{font-family:Microsoft YaHei,Tahoma;font-size:15px;}' +
-        'ul.root{padding-left:0;}' +
+        'body{position:relative;margin:0;padding:.5em;}' +
+        'ul.root{margin:0;padding-left:0;}' +
         'li{list-style:none;}' +
         '.separator{margin-right:.5em;}' +
         '.number{color:darkorange;}' +
@@ -129,8 +132,8 @@ function formatJSON() {
         '.key{color:brown;}' +
         '.string{color:green;}' +
         '.operator{color:blue;}' +
-        '.value{position:relative;cursor:pointer;}' +
-        '.popup{position:absolute;top:100%;margin-top:.5em;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}' +
+        '.value{cursor:pointer;}' +
+        '.popup{position:absolute;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}' +
         '.info-key{font-weight:bold;}' +
         '.info-val{color:dodgerblue;}' +
         '.hide{display:none;}'
@@ -146,8 +149,7 @@ function formatJSON() {
 
 function initPopup() {
   function hide() {
-    var parent = popup.parentNode;
-    if (parent) parent.removeChild(popup);
+    popup.remove();
   }
   var popup = document.createElement('div');
   popup.className = 'popup';
@@ -158,9 +160,23 @@ function initPopup() {
   config.popup = {
     node: popup,
     hide: hide,
-    show: function (target) {
-      target.appendChild(popup);
-      popup.innerHTML = '<span class="info-key">type</span>: <span class="info-val">' + safeHTML(target.dataset.type) + '</span>';
+    show: function (range) {
+      var gap = 5;
+      var scrollHeight = document.body.scrollHeight;
+      var scrollTop = document.body.scrollTop;
+      var rects = range.getClientRects(), rect;
+      if (rects[0].top < 100) {
+        rect = rects[rects.length - 1];
+        popup.style.top = rect.bottom + scrollTop + gap + 'px';
+        popup.style.bottom = '';
+      } else {
+        rect = rects[0];
+        popup.style.top = '';
+        popup.style.bottom = scrollHeight - rect.top - scrollTop + gap + 'px';
+      }
+      popup.style.left = rect.left + 'px';
+      popup.innerHTML = '<span class="info-key">type</span>: <span class="info-val">' + safeHTML(range.startContainer.dataset.type) + '</span>';
+      document.body.appendChild(popup);
     },
   };
 }
@@ -172,6 +188,7 @@ function selectNode(node) {
   range.setStartBefore(node.firstChild);
   range.setEndAfter(node.firstChild);
   selection.addRange(range);
+  return range;
 }
 
 function bindEvents(root) {
@@ -179,8 +196,7 @@ function bindEvents(root) {
     e.stopPropagation();
     var target = e.target;
     if (target.classList.contains('value')) {
-      selectNode(target);
-      config.popup.show(target);
+      config.popup.show(selectNode(target));
     } else
       config.popup.hide();
   }, false);
