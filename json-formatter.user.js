@@ -1,14 +1,17 @@
 // ==UserScript==
-// @name JSON formatter
-// @namespace http://gerald.top
-// @author  Gerald <i@gerald.top>
-// @icon  http://cn.gravatar.com/avatar/a0ad718d86d21262ccd6ff271ece08a3?s=80
+// @name        JSON formatter
+// @namespace   http://gerald.top
+// @author      Gerald <i@gerald.top>
+// @icon        http://cn.gravatar.com/avatar/a0ad718d86d21262ccd6ff271ece08a3?s=80
 // @description Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version 1.1.6
-// @match *://*/*
-// @grant GM_addStyle
-// @grant GM_registerMenuCommand
+// @version     1.2
+// @match       *://*/*
+// @match       file:///*
+// @grant       GM_getValue
+// @grant       GM_setValue
+// @grant       GM_addStyle
+// @grant       GM_registerMenuCommand
 // ==/UserScript==
 
 function safeHTML(html) {
@@ -22,161 +25,227 @@ function safeHTML(html) {
 }
 
 function join(list) {
-  var html = [];
-  var open = false;
-  var last = null;
-  var close = function () {
-    html.push('</li>');
-    open = false;
-    last = null;
-  };
-  list.forEach(function (item) {
-    if (open && !item.backwards)
-      close();
-    if (!open) {
+  function open() {
+    if (!isOpen) {
       html.push('<li>');
-      open = true;
+      isOpen = true;
     }
-    if (item.backwards && last && last.forwards)
-      html.push(last.separator);
-    html.push(item.data);
-    if (!item.forwards)
-      close();
-    else
-      last = item;
+  }
+  function close() {
+    if (isOpen) {
+      html.push('</li>');
+      isOpen = false;
+    }
+  }
+  var html = [];
+  var isOpen = false;
+  list.forEach(function (item, i) {
+    var next = list[i + 1];
+    open();
+    item.data && html.push(item.data);
+    next && item.separator && html.push(item.separator);
+    if (
+      !next
+      || next.type === KEY
+      || item.type !== KEY && (
+        item.type === SINGLELINE || next.type === SINGLELINE
+      )
+    ) close();
   });
-  if (open) html.push('</li>');
   return html.join('');
 }
 
 function getHtml(data) {
-  var html = '<span class="' + (data.cls || 'value ' + typeof data.value) + '" ' +
-    'data-type="' + safeHTML(data.type || typeof data.value) + '" ' +
+  var type = typeof data.value;
+  var html = '<span class="' + (data.cls || 'value ' + type) + '" ' +
+    'data-type="' + safeHTML(data.type || type) + '" ' +
     'data-value="' + safeHTML(data.value) + '">' + safeHTML(data.value) + '</span>';
+  if ((data.cls === 'key' || !data.cls && type === 'string') && config.showQuotes)
+    html = '"' + html + '"';
   return html;
 }
 
 function render(data) {
+  var ret;
   if (Array.isArray(data)) {
     var arr = [];
-    var ret = {
-      backwards: true,
-      forwards: true,
-      separator: getHtml({value: ',', cls: 'separator'}),
+    ret = {
+      type: MULTILINE,
+      separator: getHtml({
+        value: config.showSeparators ? ',' : '',
+        cls: 'separator',
+      }),
     };
     arr.push(getHtml({value: '[', cls: 'operator'}));
     if (data.length) {
-      arr.push('<ul>');
-      arr.push(join(data.map(render)));
-      arr.push('</ul>');
+      arr.push('<ul>', join(data.map(render)), '</ul>');
     } else {
       arr.push(getHtml({value: '', cls: 'separator'}));
-      ret.forwards = false;
+      ret.type = SINGLELINE;
     }
     arr.push(getHtml({value: ']', cls: 'operator'}));
     ret.data = arr.join('');
-    return ret;
-  } else if (data === null)
-    return {data: getHtml({value: data, cls: 'value null'}), backwards: true};
-  else if (typeof data == 'object') {
+  } else if (data === null) {
+    ret = {
+      type: SINGLELINE,
+      separator: getHtml({
+        value: config.showSeparators ? ',' : '',
+        cls: 'separator',
+      }),
+      data: getHtml({value: data, cls: 'value null'}),
+    };
+  } else if (typeof data == 'object') {
     var arr = [];
-    var ret = {
-      backwards: true,
-      forwards: true,
-      separator: getHtml({value: ',', cls: 'separator'}),
+    ret = {
+      type: MULTILINE,
+      separator: getHtml({
+        value: config.showSeparators ? ',' : '',
+        cls: 'separator',
+      }),
     };
     arr.push(getHtml({value: '{', cls: 'operator'}));
     var objdata = [];
     for (var key in data) {
       objdata.push({
+        type: KEY,
         data: getHtml({value: key, cls: 'key'}),
-        forwards: true,
         separator: getHtml({value: ':', cls: 'separator'}),
-      });
-      objdata.push(render(data[key]));
+      }, render(data[key]));
     }
     if (objdata.length) {
-      arr.push('<ul>');
-      arr.push(join(objdata));
-      arr.push('</ul>');
+      arr.push('<ul>', join(objdata), '</ul>');
     } else {
       arr.push(getHtml({value: '', cls: 'separator'}));
-      ret.forwards = false;
+      ret.type = SINGLELINE;
     }
     arr.push(getHtml({value: '}', cls: 'operator'}));
     ret.data = arr.join('');
-    return ret;
-  } else
-    return {
-      backwards: true,
+  } else {
+    ret = {
+      type: SINGLELINE,
+      separator: getHtml({
+        value: config.showSeparators ? ',' : '',
+        cls: 'separator',
+      }),
       data: getHtml({value: data}),
     };
+  }
+  return ret;
 }
 
 function formatJSON() {
-  if (config.formatted) {
-    document.body.innerHTML = config.raw;
-    config.formatted = false;
+  if (formatter.formatted) {
+    formatter.tips.hide();
+    formatter.menu.detach();
+    document.body.innerHTML = formatter.raw;
+    formatter.formatted = false;
   } else {
-    if (!('raw' in config)) {
-      config.raw = document.body.innerHTML;
-      config.data = JSON.parse(document.body.innerText);
-      config.style = GM_addStyle(
-        '*{font-family:Microsoft YaHei,Tahoma;font-size:15px;}' +
-        'body{position:relative;margin:0;padding:.5em;}' +
-        'ul.root{margin:0;padding-left:0;}' +
-        'li{list-style:none;}' +
-        '.separator{margin-right:.5em;}' +
-        '.number{color:darkorange;}' +
-        '.null{color:gray;}' +
-        '.key{color:brown;}' +
-        '.string{color:green;}' +
-        '.operator{color:blue;}' +
-        '.value{cursor:pointer;}' +
-        '.popup{position:absolute;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}' +
-        '.info-key{font-weight:bold;}' +
-        '.info-val{color:dodgerblue;}' +
-        '.hide{display:none;}'
-      );
-      initPopup();
+    if (!('raw' in formatter)) {
+      formatter.raw = document.body.innerHTML;
+      formatter.data = JSON.parse(document.body.innerText);
+      formatter.style = GM_addStyle([
+        '*{font-family:Microsoft YaHei,Tahoma;font-size:14px;}',
+        'body,ul{margin:0;padding:0;}',
+        '#root{position:relative;margin:0;padding:1em;}',
+        '#root>ul ul{padding-left:2em;}',
+        'li{list-style:none;}',
+        '.separator{margin-right:.5em;}',
+        '.number{color:darkorange;}',
+        '.null{color:gray;}',
+        '.key{color:brown;}',
+        '.string{color:green;}',
+        '.boolean{color:dodgerblue;}',
+        '.operator{color:blue;}',
+        '.value{cursor:pointer;}',
+        '.tips{position:absolute;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}',
+        '.tips-key{font-weight:bold;}',
+        '.tips-val{color:dodgerblue;}',
+        '.menu{position:fixed;top:0;right:0;background:white;padding:5px;}',
+        '.menu>span{margin-right:5px;}',
+        '.menu .btn{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;background:#eee;border-radius:4px;cursor:pointer;}',
+        '.menu .btn.active{color:white;background:#333;}',
+        '.hide{display:none;}',
+      ].join(''));
+      initTips();
+      initMenu();
+      formatter.render = function () {
+        var root = formatter.root.querySelector('li');
+        root.innerHTML = render(formatter.data).data;
+      };
     }
-    var ret = render(config.data);
-    document.body.innerHTML = '<ul class="root"><li>' + ret.data + '</li></ul>';
-    config.formatted = true;
-    bindEvents(document.body.querySelector('.root'));
+    document.body.innerHTML = '<div id="root"><ul><li></li></ul></div>';
+    formatter.formatted = true;
+    formatter.root = document.querySelector('#root');
+    formatter.menu.attach();
+    bindEvents();
+    formatter.render();
   }
 }
 
-function initPopup() {
+function removeEl(el) {
+  el && el.parentNode && el.parentNode.removeChild(el);
+}
+
+function initMenu() {
+  var menu = document.createElement('div');
+  menu.className = 'menu';
+  menu.innerHTML = [
+    '<span class="btn" data-key="showQuotes">"</span>',
+    '<span class="btn" data-key="showSeparators">,</span>',
+  ].join('');
+  [].forEach.call(menu.querySelectorAll('[data-key]'), function (el) {
+    if (config[el.dataset.key]) el.classList.add('active');
+  });
+  menu.addEventListener('click', function (e) {
+    var el = e.target;
+    var key = el.dataset.key;
+    if (key) {
+      config[key] = !config[key];
+      GM_setValue('config', config);
+      el.classList.toggle('active');
+      formatter.render();
+    }
+  }, false);
+  formatter.menu = {
+    node: menu,
+    attach: function () {
+      formatter.root.appendChild(menu);
+    },
+    detach: function () {
+      removeEl(menu);
+    },
+  };
+}
+
+function initTips() {
   function hide() {
-    popup.remove();
+    removeEl(tips);
   }
-  var popup = document.createElement('div');
-  popup.className = 'popup';
-  popup.addEventListener('click', function (e) {
+  var tips = document.createElement('div');
+  tips.className = 'tips';
+  tips.addEventListener('click', function (e) {
     e.stopPropagation();
   }, false);
   document.addEventListener('click', hide, false);
-  config.popup = {
-    node: popup,
+  formatter.tips = {
+    node: tips,
     hide: hide,
     show: function (range) {
       var gap = 5;
-      var scrollHeight = document.body.scrollHeight;
       var scrollTop = document.body.scrollTop;
       var rects = range.getClientRects(), rect;
       if (rects[0].top < 100) {
         rect = rects[rects.length - 1];
-        popup.style.top = rect.bottom + scrollTop + gap + 'px';
-        popup.style.bottom = '';
+        tips.style.top = rect.bottom + scrollTop + gap + 'px';
+        tips.style.bottom = '';
       } else {
         rect = rects[0];
-        popup.style.top = '';
-        popup.style.bottom = scrollHeight - rect.top - scrollTop + gap + 'px';
+        tips.style.top = '';
+        tips.style.bottom = formatter.root.offsetHeight - rect.top - scrollTop + gap + 'px';
       }
-      popup.style.left = rect.left + 'px';
-      popup.innerHTML = '<span class="info-key">type</span>: <span class="info-val">' + safeHTML(range.startContainer.dataset.type) + '</span>';
-      document.body.appendChild(popup);
+      tips.style.left = rect.left + 'px';
+      tips.innerHTML = '<span class="tips-key">type</span>: <span class="tips-val">' + safeHTML(range.startContainer.dataset.type) + '</span>';
+      formatter.root.appendChild(tips);
     },
   };
 }
@@ -191,18 +260,35 @@ function selectNode(node) {
   return range;
 }
 
-function bindEvents(root) {
-  root.addEventListener('click', function (e) {
+function bindEvents() {
+  formatter.root.addEventListener('click', function (e) {
     e.stopPropagation();
     var target = e.target;
     if (target.classList.contains('value')) {
-      config.popup.show(selectNode(target));
+      formatter.tips.show(selectNode(target));
     } else
-      config.popup.hide();
+      formatter.tips.hide();
   }, false);
 }
 
-var config = {};
-if (/\/json$/.test(document.contentType))
-  formatJSON();
+var getId = function () {
+  var id = 0;
+  return function () {
+    return ++ id;
+  };
+}();
+var SINGLELINE = getId();
+var MULTILINE = getId();
+var KEY = getId();
+
+var formatter = {};
+var config = GM_getValue('config', {
+  showSeparators: true,
+  showQuotes: true,
+});
+
+~[
+  'application/json',
+  'text/plain',
+].indexOf(document.contentType) && formatJSON();
 GM_registerMenuCommand('Toggle JSON format', formatJSON);
