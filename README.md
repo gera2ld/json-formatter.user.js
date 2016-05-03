@@ -5,9 +5,11 @@ This is a userscript for browsers to display JSON data beautifully.
 
 Features
 ---
-1. Indented
-1. Syntax highlighted
+1. Indented and syntax highlighted
 1. Show details with a click
+1. Support hiding quotes and commas
+1. Allow copying indented text
+1. Allow forced prettification when content type is wrong
 
 Installation
 ---
