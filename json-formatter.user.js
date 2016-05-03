@@ -5,7 +5,7 @@
 // @icon        http://cn.gravatar.com/avatar/a0ad718d86d21262ccd6ff271ece08a3?s=80
 // @description Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version     1.2
+// @version     1.3
 // @match       *://*/*
 // @match       file:///*
 // @grant       GM_getValue
@@ -22,6 +22,30 @@ function safeHTML(html) {
       '"': '&quot;',
     }[key];
   });
+}
+
+function getSpace(level) {
+  if (!level) return;
+  var span = document.createElement('span');
+  span.className = 'space';
+  span.innerHTML = '&nbsp;'.repeat(2 * level);
+  return span;
+}
+
+function initSpaces(root, level) {
+  level = level || 0;
+  var space = getSpace(level);
+  space && root.insertBefore(space, root.firstChild);
+  var children = root.children;
+  for (var i = children.length; i --; ) {
+    var child = children[i];
+    if (child.tagName.toLowerCase() === 'ul') {
+      space && root.insertBefore(space.cloneNode(true), child.nextElementSibling);
+      [].forEach.call(child.children, function (li) {
+        initSpaces(li, level + 1);
+      });
+    }
+  }
 }
 
 function join(list) {
@@ -60,25 +84,26 @@ function getHtml(data) {
   var html = '<span class="' + (data.cls || 'value ' + type) + '" ' +
     'data-type="' + safeHTML(data.type || type) + '" ' +
     'data-value="' + safeHTML(data.value) + '">' + safeHTML(data.value) + '</span>';
-  if ((data.cls === 'key' || !data.cls && type === 'string') && config.showQuotes)
-    html = '"' + html + '"';
+  if (data.cls === 'key' || !data.cls && type === 'string')
+    html = QUOTE + html + QUOTE;
   return html;
 }
 
 function render(data) {
-  var ret;
+  var ret, arr;
   if (Array.isArray(data)) {
-    var arr = [];
+    arr = [];
     ret = {
       type: MULTILINE,
-      separator: getHtml({
-        value: config.showSeparators ? ',' : '',
-        cls: 'separator',
-      }),
+      separator: COMMA,
     };
     arr.push(getHtml({value: '[', cls: 'operator'}));
     if (data.length) {
-      arr.push('<ul>', join(data.map(render)), '</ul>');
+      arr.push(
+        '<ul>',
+        join(data.map(render)),
+        '</ul>'
+      );
     } else {
       arr.push(getHtml({value: '', cls: 'separator'}));
       ret.type = SINGLELINE;
@@ -88,20 +113,14 @@ function render(data) {
   } else if (data === null) {
     ret = {
       type: SINGLELINE,
-      separator: getHtml({
-        value: config.showSeparators ? ',' : '',
-        cls: 'separator',
-      }),
+      separator: COMMA,
       data: getHtml({value: data, cls: 'value null'}),
     };
   } else if (typeof data == 'object') {
-    var arr = [];
+    arr = [];
     ret = {
       type: MULTILINE,
-      separator: getHtml({
-        value: config.showSeparators ? ',' : '',
-        cls: 'separator',
-      }),
+      separator: COMMA,
     };
     arr.push(getHtml({value: '{', cls: 'operator'}));
     var objdata = [];
@@ -113,7 +132,11 @@ function render(data) {
       }, render(data[key]));
     }
     if (objdata.length) {
-      arr.push('<ul>', join(objdata), '</ul>');
+      arr.push(
+        '<ul>',
+        join(objdata),
+        '</ul>'
+      );
     } else {
       arr.push(getHtml({value: '', cls: 'separator'}));
       ret.type = SINGLELINE;
@@ -123,10 +146,7 @@ function render(data) {
   } else {
     ret = {
       type: SINGLELINE,
-      separator: getHtml({
-        value: config.showSeparators ? ',' : '',
-        cls: 'separator',
-      }),
+      separator: COMMA,
       data: getHtml({value: data}),
     };
   }
@@ -146,10 +166,12 @@ function formatJSON() {
       formatter.style = GM_addStyle([
         '*{font-family:Microsoft YaHei,Tahoma;font-size:14px;}',
         'body,ul{margin:0;padding:0;}',
-        '#root{position:relative;margin:0;padding:1em;}',
-        '#root>ul ul{padding-left:2em;}',
+        '#root{position:relative;margin:0;padding:1rem;}',
+        '#root>ul ul{padding-left:2rem;}',
+        '.quote,.comma,.separator{color:#999;}',
+        '.space,.hide-quotes .quote,.hide-separators .comma{font-size:0;}',
         'li{list-style:none;}',
-        '.separator{margin-right:.5em;}',
+        '.comma,.separator{margin-right:.5rem;}',
         '.number{color:darkorange;}',
         '.null{color:gray;}',
         '.key{color:brown;}',
@@ -160,10 +182,10 @@ function formatJSON() {
         '.tips{position:absolute;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}',
         '.tips-key{font-weight:bold;}',
         '.tips-val{color:dodgerblue;}',
-        '.menu{position:fixed;top:0;right:0;background:white;padding:5px;}',
+        '.menu{position:fixed;top:0;right:0;background:white;padding:5px;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}',
         '.menu>span{margin-right:5px;}',
-        '.menu .btn{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;background:#eee;border-radius:4px;cursor:pointer;}',
-        '.menu .btn.active{color:white;background:#333;}',
+        '.menu .btn{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;background:#ddd;border-radius:4px;cursor:pointer;}',
+        '.menu .btn.active{color:white;background:#444;}',
         '.hide{display:none;}',
       ].join(''));
       initTips();
@@ -171,6 +193,14 @@ function formatJSON() {
       formatter.render = function () {
         var root = formatter.root.querySelector('li');
         root.innerHTML = render(formatter.data).data;
+        formatter.update();
+        initSpaces(root);
+      };
+      formatter.update = function () {
+        var ul = formatter.root.querySelector('ul');
+        formatter.options.forEach(function (item) {
+          ul.classList[config[item.key] ? 'add' : 'remove'](item.key);
+        });
       };
     }
     document.body.innerHTML = '<div id="root"><ul><li></li></ul></div>';
@@ -189,12 +219,13 @@ function removeEl(el) {
 function initMenu() {
   var menu = document.createElement('div');
   menu.className = 'menu';
-  menu.innerHTML = [
-    '<span class="btn" data-key="showQuotes">"</span>',
-    '<span class="btn" data-key="showSeparators">,</span>',
-  ].join('');
-  [].forEach.call(menu.querySelectorAll('[data-key]'), function (el) {
-    if (config[el.dataset.key]) el.classList.add('active');
+  formatter.options.forEach(function (item) {
+    var span = document.createElement('span');
+    span.className = 'btn';
+    if (config[item.key]) span.className += ' active';
+    span.dataset.key = item.key;
+    span.innerHTML = item.title;
+    menu.appendChild(span);
   });
   menu.addEventListener('click', function (e) {
     var el = e.target;
@@ -203,7 +234,7 @@ function initMenu() {
       config[key] = !config[key];
       GM_setValue('config', config);
       el.classList.toggle('active');
-      formatter.render();
+      formatter.update();
     }
   }, false);
   formatter.menu = {
@@ -266,8 +297,9 @@ function bindEvents() {
     var target = e.target;
     if (target.classList.contains('value')) {
       formatter.tips.show(selectNode(target));
-    } else
+    } else {
       formatter.tips.hide();
+    }
   }, false);
 }
 
@@ -280,12 +312,24 @@ var getId = function () {
 var SINGLELINE = getId();
 var MULTILINE = getId();
 var KEY = getId();
+var QUOTE = '<span class="quote">"</span>';
+var COMMA = '<span class="comma">,</span>';
 
-var formatter = {};
-var config = GM_getValue('config', {
-  showSeparators: true,
-  showQuotes: true,
-});
+var formatter = {
+  options: [{
+    key: 'hide-quotes',
+    title: '"',
+    def: false,
+  }, {
+    key: 'hide-separators',
+    title: ',',
+    def: false,
+  }],
+};
+var config = GM_getValue('config', formatter.options.reduce(function (res, item) {
+  res[item.key] = item.def;
+  return res;
+}, {}));
 
 ~[
   'application/json',
