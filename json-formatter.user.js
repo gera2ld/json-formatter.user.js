@@ -178,7 +178,7 @@ function formatJSON() {
         '.string{color:green;}',
         '.boolean{color:dodgerblue;}',
         '.operator{color:blue;}',
-        '.value{cursor:pointer;}',
+        '.value{cursor:pointer;white-space:pre;}',
         '.tips{position:absolute;padding:.5em;border-radius:.5em;box-shadow:0 0 1em gray;background:white;z-index:1;white-space:nowrap;color:black;}',
         '.tips-key{font-weight:bold;}',
         '.tips-val{color:dodgerblue;}',
