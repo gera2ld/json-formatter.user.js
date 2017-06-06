@@ -1,0 +1,91 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  font-family: Menlo, "Microsoft YaHei", Tahoma;
+  font-size: 14px;
+}
+
+#root {
+  position: relative;
+  margin: 0;
+  padding: 1rem;
+  > pre {
+    white-space: pre-wrap;
+  }
+}
+
+.subtle {
+  color: #999;
+}
+.number {
+  color: darkorange;
+}
+.null {
+  color: gray;
+}
+.key {
+  color: brown;
+}
+.string {
+  color: green;
+}
+.boolean {
+  color: dodgerblue;
+}
+.bracket {
+  color: blue;
+}
+.item {
+  cursor: pointer;
+}
+
+.tips {
+  position: absolute;
+  padding: .5em;
+  border-radius: .5em;
+  box-shadow: 0 0 1em gray;
+  background: white;
+  z-index: 1;
+  white-space: nowrap;
+  color: black;
+  &-key {
+    font-weight: bold;
+  }
+  &-val {
+    color: dodgerblue;
+  }
+}
+.menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: white;
+  padding: 5px;
+  user-select: none;
+  > span {
+    margin-right: 5px;
+  }
+  .btn {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    background: #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    &.active {
+      color: white;
+      background: #444;
+    }
+  }
+}
+
+.hide-quotes .quote,
+.hide-commas .comma {
+  font-size: 0;
+}

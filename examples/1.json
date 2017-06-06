@@ -1,0 +1,26 @@
+{
+  "boolean": true,
+  "null": null,
+  "number": 123,
+  "string": "string",
+  "empty array": [],
+  "empty object": {},
+  "non-empty array": [1, 2],
+  "non-empty object": { "a": 1, "b": 2 },
+  "complex": [{
+    "a": 1,
+    "b": 2,
+    "c": {
+      "d": {}
+    }
+  }, {
+    "b": 1
+  }, 2, [
+    3
+  ], [
+  ], 5, {
+    "c": 6
+  }, [
+    "a"
+  ]]
+}

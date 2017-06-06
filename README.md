@@ -10,6 +10,7 @@ Features
 1. Support hiding quotes and commas
 1. Allow copying indented text
 1. Allow forced prettification when content type is wrong
+1. Support JSONP
 
 Installation
 ---
@@ -22,11 +23,16 @@ First of all make sure a modern browser and the corresponding add-on are install
 
 Then install the script from:
 
-* 我的网站（中文）: <http://gerald.top/code/json-formatter>
 * Greasy Fork: <https://greasyfork.org/scripts/10718>
 
 Snapshots
 ---
-![Quick look](snapshots/1.png)
+![json](https://cloud.githubusercontent.com/assets/3139113/26823086/e19e340c-4ade-11e7-9edb-f5d6ebe26377.png)
 
-![Toggle](snapshots/2.png)
+![jsonp](https://cloud.githubusercontent.com/assets/3139113/26823105/ff5d03ba-4ade-11e7-8069-c79fe1357368.png)
+
+Development
+---
+``` sh
+$ npm run dev
+```
