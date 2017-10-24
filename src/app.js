@@ -325,7 +325,14 @@ function initTips() {
         tips.style.bottom = `${formatter.root.offsetHeight - rect.top - scrollTop + gap}px`;
       }
       tips.style.left = `${rect.left}px`;
-      tips.innerHTML = `<span class="tips-key">type</span>: <span class="tips-val">${safeHTML(range.startContainer.dataset.type)}</span>`;
+      const { type, value } = range.startContainer.dataset;
+      const html = [
+        `<span class="tips-key">type</span>: <span class="tips-val">${safeHTML(type)}</span>`,
+      ];
+      if (type === 'string' && /^(https?|ftps?):\/\/\S+/.test(value)) {
+        html.push('<br>', `<a class="tips-link" href="${encodeURI(value)}" target="_blank">Open link</a>`);
+      }
+      tips.innerHTML = html.join('');
       formatter.root.appendChild(tips);
     },
   };

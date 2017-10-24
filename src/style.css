@@ -58,6 +58,9 @@ body {
   &-val {
     color: dodgerblue;
   }
+  &-link {
+    color: slateblue;
+  }
 }
 .menu {
   position: fixed;
