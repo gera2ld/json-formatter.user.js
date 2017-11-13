@@ -1,6 +1,6 @@
 {
   "name": "json-formatter",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "JSON Formatter ===",
   "main": "index.js",
   "scripts": {
