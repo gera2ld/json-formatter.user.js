@@ -87,6 +87,9 @@ body {
     }
   }
 }
+.space {
+  letter-spacing: 8px;
+}
 
 .hide-quotes .quote,
 .hide-commas .comma {

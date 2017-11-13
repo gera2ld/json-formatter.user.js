@@ -30,6 +30,7 @@ const createComma = () => createElement('span', {
   textContent: ',',
 });
 const createSpace = (n = 1) => createElement('span', {
+  className: 'space',
   textContent: ' '.repeat(n),
 });
 const createIndent = (n = 1) => createSpace(2 * n);
