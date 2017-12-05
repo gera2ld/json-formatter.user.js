@@ -8,9 +8,10 @@ Features
 1. Indented and syntax highlighted
 1. Show details with a click
 1. Support hiding quotes and commas
-1. Allow copying indented text
 1. Allow forced prettification when content type is wrong
 1. Support JSONP
+1. Support folding complex objects
+1. Discover links
 
 Installation
 ---
@@ -27,12 +28,12 @@ Then install the script from:
 
 Snapshots
 ---
-![json](https://cloud.githubusercontent.com/assets/3139113/26823086/e19e340c-4ade-11e7-9edb-f5d6ebe26377.png)
+![json](https://user-images.githubusercontent.com/3139113/33613649-218d2526-da10-11e7-8564-9073391b7f67.png)
 
 ![jsonp](https://cloud.githubusercontent.com/assets/3139113/26823105/ff5d03ba-4ade-11e7-8069-c79fe1357368.png)
 
 Development
 ---
 ``` sh
-$ npm run dev
+$ yarn dev
 ```
