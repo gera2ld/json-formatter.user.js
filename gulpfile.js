@@ -28,9 +28,12 @@ gulp.task('js', ['css'], () => {
     presets: [
       ['env', {
         targets: {
-          browsers: ['chrome >= 45'],
+          browsers: ['chrome >= 56'],
         },
       }],
+    ],
+    plugins: [
+      ['transform-object-rest-spread', { useBuiltIns: true }],
     ],
   }))
   .pipe(replace(/process\.env\.(\w+)/g, (m, key) => data[key] || null))

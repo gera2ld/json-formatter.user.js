@@ -6,15 +6,20 @@
 html,
 body {
   font-family: Menlo, "Microsoft YaHei", Tahoma;
-  font-size: 14px;
 }
 
-#root {
+#json-formatter {
   position: relative;
   margin: 0;
-  padding: 1rem;
+  padding: 2em 1em 1em 2em;
+  font-size: 14px;
+  line-height: 1.5;
   > pre {
     white-space: pre-wrap;
+    &:not(.show-quotes) .quote,
+    &:not(.show-commas) .comma {
+      display: none;
+    }
   }
 }
 
@@ -41,6 +46,57 @@ body {
 }
 .item {
   cursor: pointer;
+}
+.content {
+  padding-left: 2em;
+  .collapse > span > & {
+    display: inline;
+    padding-left: 0;
+    > * {
+      display: none;
+    }
+    &::before {
+      content: '...';
+    }
+  }
+}
+.complex {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 1.5em;
+    left: -.5em;
+    bottom: .7em;
+    margin-left: -1px;
+    border-left: 1px dashed currentColor;
+  }
+  &.collapse::before {
+    display: none;
+  }
+}
+.folder {
+  color: #999;
+  position: absolute;
+  top: 0;
+  left: -1em;
+  width: 1em;
+  text-align: center;
+  transform: rotate(90deg);
+  transition: transform .3s;
+  .collapse > & {
+    transform: rotate(0);
+  }
+  &::before {
+    content: '\25B8';
+  }
+}
+.summary {
+  color: #999;
+  margin-left: 1em;
+  *:not(.collapse) > & {
+    display: none;
+  }
 }
 
 .tips {
@@ -69,29 +125,17 @@ body {
   background: white;
   padding: 5px;
   user-select: none;
+  z-index: 10;
   > span {
-    margin-right: 5px;
-  }
-  .btn {
     display: inline-block;
-    width: 18px;
-    height: 18px;
-    line-height: 18px;
-    text-align: center;
-    background: #ddd;
+    padding: 4px 8px;
+    margin-right: 5px;
     border-radius: 4px;
+    background: #ddd;
+    border: 1px solid #ddd;
     cursor: pointer;
-    &.active {
-      color: white;
-      background: #444;
+    &.toggle:not(.active) {
+      background: none;
     }
   }
-}
-.space {
-  letter-spacing: 8px;
-}
-
-.hide-quotes .quote,
-.hide-commas .comma {
-  font-size: 0;
 }

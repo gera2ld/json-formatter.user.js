@@ -23,6 +23,7 @@
     "formatter"
   ],
   "devDependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.5.1",
     "eslint": "^3.19.0",
     "eslint-config-airbnb-base": "^11.2.0",

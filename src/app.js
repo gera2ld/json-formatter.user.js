@@ -12,46 +12,30 @@
 // @grant       GM_setValue
 // @grant       GM_addStyle
 // @grant       GM_registerMenuCommand
+// @grant       GM_setClipboard
 // ==/UserScript==
 
-let id = 0;
-const getId = () => (id += 1);
-const SINGLELINE = getId();
-const MULTILINE = getId();
-const KEY = getId();
 const gap = 5;
-
-const createQuote = () => createElement('span', {
-  className: 'subtle quote',
-  textContent: '"',
-});
-const createComma = () => createElement('span', {
-  className: 'subtle comma',
-  textContent: ',',
-});
-const createSpace = (n = 1) => createElement('span', {
-  className: 'space',
-  textContent: ' '.repeat(n),
-});
-const createIndent = (n = 1) => createSpace(2 * n);
-const createBr = () => createElement('br');
 
 const formatter = {
   options: [{
-    key: 'hide-quotes',
+    key: 'show-quotes',
     title: '"',
-    def: false,
+    def: true,
   }, {
-    key: 'hide-commas',
+    key: 'show-commas',
     title: ',',
-    def: false,
+    def: true,
   }],
 };
 
-const config = GM_getValue('config', formatter.options.reduce((res, item) => {
-  res[item.key] = item.def;
-  return res;
-}, {}));
+const config = {
+  ...formatter.options.reduce((res, item) => {
+    res[item.key] = item.def;
+    return res;
+  }, {}),
+  ...GM_getValue('config'),
+};
 
 if ([
   'application/json',
@@ -79,225 +63,220 @@ function createElement(tag, props) {
   return el;
 }
 
-function join(rendered, level = 0) {
-  const arr = [];
-  for (let i = 0; i < rendered.length; i += 1) {
-    const item = rendered[i];
-    const next = rendered[i + 1];
-    if (item.data) arr.push(...item.data);
-    if (next) {
-      if (item.separator) arr.push(...item.separator);
-      if (
-        next.type === KEY ||
-        (item.type !== KEY && (
-          item.type === SINGLELINE || next.type === SINGLELINE
-        ))
-      ) {
-        arr.push(createBr(), createIndent(level));
-      } else {
-        arr.push(createSpace(1));
-      }
-    }
-  }
-  return arr;
-}
-
-function createNodes(data) {
-  const valueType = typeof data.value;
-  const type = data.type || valueType;
-  const el = createElement('span', {
-    className: data.cls || `item ${type}`,
-    textContent: `${data.value}`,
+function createQuote() {
+  return createElement('span', {
+    className: 'subtle quote',
+    textContent: '"',
   });
-  el.dataset.type = valueType;
-  el.dataset.value = data.value;
-  const els = [el];
-  if (data.type === 'key' || (!data.cls && type === 'string')) {
-    els.unshift(createQuote());
-    els.push(createQuote());
-  }
-  return els;
 }
 
-function render(data, level = 0) {
-  if (Array.isArray(data)) {
-    const arr = [];
-    const ret = {
-      type: MULTILINE,
-      separator: [createComma()],
-    };
-    arr.push(...createNodes({ value: '[', cls: 'bracket' }));
-    if (data.length) {
-      const rendered = data.reduce((res, item) => res.concat([
-        render(item, level + 1),
-      ]), []);
-      arr.push(
-        createBr(),
-        createIndent(level + 1),
-        ...join(rendered, level + 1),
-        createBr(),
-        createIndent(level),
-      );
-    } else {
-      arr.push(...createNodes({ value: '', cls: 'subtle' }));
-      ret.type = SINGLELINE;
-    }
-    arr.push(...createNodes({ value: ']', cls: 'bracket' }));
-    ret.data = arr;
-    return ret;
-  }
-  if (data === null) {
-    return {
-      type: SINGLELINE,
-      separator: [createComma()],
-      data: createNodes({ value: data, type: 'null' }),
-    };
-  }
-  if (typeof data === 'object') {
-    const arr = [];
-    const ret = {
-      type: MULTILINE,
-      separator: [createComma()],
-    };
-    arr.push(...createNodes({ value: '{', cls: 'bracket' }));
-    const rendered = Object.keys(data).reduce((res, key) => res.concat([
-      {
-        type: KEY,
-        data: createNodes({ value: key, type: 'key' }),
-        separator: createNodes({ value: ':', cls: 'subtle' }),
-      },
-      render(data[key], level + 1),
-    ]), []);
-    if (rendered.length) {
-      arr.push(
-        createBr(),
-        createIndent(level + 1),
-        ...join(rendered, level + 1),
-        createBr(),
-        createIndent(level),
-      );
-    } else {
-      arr.push(...createNodes({ value: '', cls: 'subtle' }));
-      ret.type = SINGLELINE;
-    }
-    arr.push(...createNodes({ value: '}', cls: 'bracket' }));
-    ret.data = arr;
-    return ret;
-  }
-  return {
-    type: SINGLELINE,
-    separator: [createComma()],
-    data: createNodes({ value: data }),
-  };
+function createComma() {
+  return createElement('span', {
+    className: 'subtle comma',
+    textContent: ',',
+  });
 }
 
 function loadJSON() {
-  const text = document.body.innerText;
+  const raw = document.body.innerText;
   try {
     // JSON
-    const content = JSON.parse(text);
-    return { prefix: '', suffix: '', content };
+    const content = JSON.parse(raw);
+    return { raw, content };
   } catch (e) {
     // not JSON
   }
   try {
     // JSONP
-    const parts = text.match(/^(.*?\w\s*\()(.+)(\)[;\s]*)$/);
+    const parts = raw.match(/^(.*?\w\s*\()(.+)(\)[;\s]*)$/);
     const content = JSON.parse(parts[2]);
-    const prefix = parts[1];
-    const suffix = parts[3];
-    return { prefix, content, suffix };
+    return {
+      raw,
+      content,
+      prefix: createElement('span', {
+        className: 'subtle',
+        textContent: parts[1].trim(),
+      }),
+      suffix: createElement('span', {
+        className: 'subtle',
+        textContent: parts[3].trim(),
+      }),
+    };
   } catch (e) {
     // not JSONP
   }
 }
 
 function formatJSON() {
-  if (formatter.formatted) {
-    formatter.tips.hide();
-    formatter.menu.detach();
-    document.body.innerHTML = formatter.raw;
-    formatter.formatted = false;
-  } else {
-    if (!('raw' in formatter)) {
-      formatter.raw = document.body.innerHTML;
-      formatter.data = loadJSON();
-      if (!formatter.data) return;
-      formatter.style = GM_addStyle(process.env.CSS);
-      initTips();
-      initMenu();
-      formatter.render = () => {
-        const { pre } = formatter;
-        const { prefix, content, suffix } = formatter.data;
-        pre.innerHTML = '';
-        [
-          createElement('span', {
-            className: 'subtle',
-            textContent: prefix,
-          }),
-          ...render(content).data,
-          createElement('span', {
-            className: 'subtle',
-            textContent: suffix,
-          }),
-        ].forEach(el => {
-          pre.appendChild(el);
-        });
-        formatter.update();
-      };
-      formatter.update = () => {
-        formatter.options.forEach(({ key }) => {
-          formatter.pre.classList[config[key] ? 'add' : 'remove'](key);
-        });
-      };
+  if (formatter.formatted) return;
+  formatter.formatted = true;
+  formatter.data = loadJSON();
+  if (!formatter.data) return;
+  formatter.style = GM_addStyle(process.env.CSS);
+  formatter.root = createElement('div', { id: 'json-formatter' });
+  document.body.innerHTML = '';
+  document.body.append(formatter.root);
+  initTips();
+  initMenu();
+  bindEvents();
+  generateNodes(formatter.data, formatter.root);
+}
+
+async function generateNodes(data, container) {
+  const pre = createElement('pre');
+  formatter.pre = pre;
+  const root = createElement('div');
+  const rootSpan = createElement('span');
+  root.append(rootSpan);
+  pre.append(root);
+  const queue = [{ el: rootSpan, elBlock: root, ...data }];
+  while (queue.length) {
+    const item = queue.shift();
+    const { el, content, prefix, suffix } = item;
+    if (prefix) el.append(prefix);
+    if (Array.isArray(content)) {
+      queue.push(...generateArray(item));
+    } else if (content && typeof content === 'object') {
+      queue.push(...generateObject(item));
+    } else {
+      const type = content == null ? 'null' : typeof content;
+      if (type === 'string') el.append(createQuote());
+      const node = createElement('span', {
+        className: `${type} item`,
+        textContent: `${content}`,
+      });
+      node.dataset.type = type;
+      node.dataset.value = content;
+      el.append(node);
+      if (type === 'string') el.append(createQuote());
     }
-    formatter.formatted = true;
-    formatter.root = createElement('div', { id: 'root' });
-    document.body.innerHTML = '';
-    document.body.appendChild(formatter.root);
-    formatter.pre = createElement('pre');
-    formatter.root.appendChild(formatter.pre);
-    formatter.menu.attach();
-    bindEvents();
-    formatter.render();
+    if (suffix) el.append(suffix);
+  }
+  container.append(pre);
+  updateView();
+}
+
+function setFolder(el, length) {
+  if (length) {
+    el.classList.add('complex');
+    el.append(createElement('div', {
+      className: 'folder',
+    }));
+    el.append(createElement('span', {
+      textContent: `// ${length} items`,
+      className: 'summary',
+    }));
   }
 }
 
+function generateArray({ el, elBlock, content }) {
+  const elContent = content.length && createElement('div', {
+    className: 'content',
+  });
+  setFolder(elBlock, content.length);
+  el.append(
+    createElement('span', {
+      textContent: '[',
+      className: 'bracket',
+    }),
+    elContent || ' ',
+    createElement('span', {
+      textContent: ']',
+      className: 'bracket',
+    }),
+  );
+  return content.map((item, i) => {
+    const elChild = createElement('div');
+    elContent.append(elChild);
+    const elValue = createElement('span');
+    elChild.append(elValue);
+    if (i < content.length - 1) elChild.append(createComma());
+    return {
+      el: elValue,
+      elBlock: elChild,
+      content: item,
+    };
+  });
+}
+
+function generateObject({ el, elBlock, content }) {
+  const keys = Object.keys(content);
+  const elContent = keys.length && createElement('div', {
+    className: 'content',
+  });
+  setFolder(elBlock, keys.length);
+  el.append(
+    createElement('span', {
+      textContent: '{',
+      className: 'bracket',
+    }),
+    elContent || ' ',
+    createElement('span', {
+      textContent: '}',
+      className: 'bracket',
+    }),
+  );
+  return keys.map((key, i) => {
+    const elChild = createElement('div');
+    elContent.append(elChild);
+    const elValue = createElement('span');
+    const node = createElement('span', {
+      className: 'key item',
+      textContent: key,
+    });
+    node.dataset.type = typeof key;
+    elChild.append(
+      createQuote(),
+      node,
+      createQuote(),
+      ': ',
+      elValue,
+    );
+    if (i < keys.length - 1) elChild.append(createComma());
+    return { el: elValue, content: content[key], elBlock: elChild };
+  });
+}
+
+function updateView() {
+  formatter.options.forEach(({ key }) => {
+    formatter.pre.classList[config[key] ? 'add' : 'remove'](key);
+  });
+}
+
 function removeEl(el) {
-  if (el && el.parentNode) el.parentNode.removeChild(el);
+  el.remove();
 }
 
 function initMenu() {
   const menu = createElement('div', {
     className: 'menu',
   });
+  const btnCopy = createElement('span', {
+    textContent: 'Copy',
+  });
+  btnCopy.addEventListener('click', () => {
+    GM_setClipboard(formatter.data.raw);
+  }, false);
+  menu.append(btnCopy);
   formatter.options.forEach(item => {
     const span = createElement('span', {
-      className: `btn${config[item.key] ? ' active' : ''}`,
+      className: `toggle${config[item.key] ? ' active' : ''}`,
       innerHTML: item.title,
     });
     span.dataset.key = item.key;
-    menu.appendChild(span);
+    menu.append(span);
   });
   menu.addEventListener('click', e => {
     const el = e.target;
-    const key = el.dataset.key;
+    const { key } = el.dataset;
     if (key) {
       config[key] = !config[key];
       GM_setValue('config', config);
       el.classList.toggle('active');
-      formatter.update();
+      updateView();
     }
   }, false);
-  formatter.menu = {
-    node: menu,
-    attach() {
-      formatter.root.appendChild(menu);
-    },
-    detach() {
-      removeEl(menu);
-    },
-  };
+  formatter.root.append(menu);
 }
 
 function initTips() {
@@ -334,7 +313,7 @@ function initTips() {
         html.push('<br>', `<a class="tips-link" href="${encodeURI(value)}" target="_blank">Open link</a>`);
       }
       tips.innerHTML = html.join('');
-      formatter.root.appendChild(tips);
+      formatter.root.append(tips);
     },
   };
 }
@@ -357,6 +336,9 @@ function bindEvents() {
       formatter.tips.show(selectNode(target));
     } else {
       formatter.tips.hide();
+    }
+    if (target.classList.contains('folder')) {
+      target.parentNode.classList.toggle('collapse');
     }
   }, false);
 }

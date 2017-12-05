@@ -9,6 +9,7 @@ module.exports = {
     GM_getValue: true,
     GM_setValue: true,
     GM_registerMenuCommand: true,
+    GM_setClipboard: true,
   },
   rules: {
     'arrow-parens': ['off'],
