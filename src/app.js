@@ -122,7 +122,7 @@ function formatJSON() {
   generateNodes(formatter.data, formatter.root);
 }
 
-async function generateNodes(data, container) {
+function generateNodes(data, container) {
   const pre = createElement('pre');
   formatter.pre = pre;
   const root = createElement('div');
