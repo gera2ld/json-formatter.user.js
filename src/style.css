@@ -69,7 +69,7 @@ body {
     left: -.5em;
     bottom: .7em;
     margin-left: -1px;
-    border-left: 1px dashed currentColor;
+    border-left: 1px dashed #999;
   }
   &.collapse::before {
     display: none;
@@ -84,11 +84,9 @@ body {
   text-align: center;
   transform: rotate(90deg);
   transition: transform .3s;
+  cursor: pointer;
   .collapse > & {
     transform: rotate(0);
-  }
-  &::before {
-    content: '\25B8';
   }
 }
 .summary {

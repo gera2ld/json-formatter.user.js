@@ -161,6 +161,7 @@ function setFolder(el, length) {
     el.classList.add('complex');
     el.append(createElement('div', {
       className: 'folder',
+      textContent: '\u25b8',
     }));
     el.append(createElement('span', {
       textContent: `// ${length} items`,
