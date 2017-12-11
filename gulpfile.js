@@ -26,14 +26,12 @@ gulp.task('js', ['css'], () => {
   return gulp.src('src/app.js')
   .pipe(babel({
     presets: [
-      ['env', {
+      ['@babel/env', {
         targets: {
           browsers: ['chrome >= 56'],
         },
       }],
-    ],
-    plugins: [
-      ['transform-object-rest-spread', { useBuiltIns: true }],
+      ['@babel/stage-2', { useBuiltIns: true }],
     ],
   }))
   .pipe(replace(/process\.env\.(\w+)/g, (m, key) => data[key] || null))
