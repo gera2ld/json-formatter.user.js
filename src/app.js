@@ -15,6 +15,8 @@
 // @grant       GM_setClipboard
 // ==/UserScript==
 
+import { css } from './style.css';
+
 const gap = 5;
 
 const formatter = {
@@ -41,7 +43,7 @@ if ([
   'application/json',
   'text/plain',
   'application/javascript',
-  'text/javascript',    // file:///foo/bar.js
+  'text/javascript', // file:///foo/bar.js
 ].includes(document.contentType)) formatJSON();
 GM_registerMenuCommand('Toggle JSON format', formatJSON);
 
@@ -112,7 +114,7 @@ function formatJSON() {
   formatter.formatted = true;
   formatter.data = loadJSON();
   if (!formatter.data) return;
-  formatter.style = GM_addStyle(process.env.CSS);
+  formatter.style = GM_addStyle(css);
   formatter.root = createElement('div', { id: 'json-formatter' });
   document.body.innerHTML = '';
   document.body.append(formatter.root);
@@ -132,7 +134,9 @@ function generateNodes(data, container) {
   const queue = [{ el: rootSpan, elBlock: root, ...data }];
   while (queue.length) {
     const item = queue.shift();
-    const { el, content, prefix, suffix } = item;
+    const {
+      el, content, prefix, suffix,
+    } = item;
     if (prefix) el.append(prefix);
     if (Array.isArray(content)) {
       queue.push(...generateArray(item));
@@ -293,7 +297,7 @@ function initTips() {
     node: tips,
     hide,
     show(range) {
-      const scrollTop = document.body.scrollTop;
+      const { scrollTop } = document.body;
       const rects = range.getClientRects();
       let rect;
       if (rects[0].top < 100) {
@@ -301,7 +305,7 @@ function initTips() {
         tips.style.top = `${rect.bottom + scrollTop + gap}px`;
         tips.style.bottom = '';
       } else {
-        rect = rects[0];
+        ([rect] = rects);
         tips.style.top = '';
         tips.style.bottom = `${formatter.root.offsetHeight - rect.top - scrollTop + gap}px`;
       }
