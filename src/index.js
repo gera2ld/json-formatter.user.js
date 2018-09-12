@@ -1,21 +1,7 @@
-// ==UserScript==
-// @name        JSON formatter
-// @namespace   http://gerald.top
-// @author      Gerald <i@gerald.top>
-// @icon        http://cn.gravatar.com/avatar/a0ad718d86d21262ccd6ff271ece08a3?s=80
-// @description Format JSON data in a beautiful way.
-// @description:zh-CN 更加漂亮地显示JSON数据。
-// @version     process.env.VERSION
-// @match       *://*/*
-// @match       file:///*
-// @grant       GM_getValue
-// @grant       GM_setValue
-// @grant       GM_addStyle
-// @grant       GM_registerMenuCommand
-// @grant       GM_setClipboard
-// ==/UserScript==
-
+import './meta';
 import { css } from './style.css';
+
+const h = VM.createElement;
 
 const gap = 5;
 
@@ -47,36 +33,12 @@ if ([
 ].includes(document.contentType)) formatJSON();
 GM_registerMenuCommand('Toggle JSON format', formatJSON);
 
-function safeHTML(html) {
-  return String(html).replace(/[<&"]/g, key => ({
-    '<': '&lt;',
-    '&': '&amp;',
-    '"': '&quot;',
-  }[key]));
-}
-
-function createElement(tag, props) {
-  const el = document.createElement(tag);
-  if (props) {
-    Object.keys(props).forEach(key => {
-      el[key] = props[key];
-    });
-  }
-  return el;
-}
-
 function createQuote() {
-  return createElement('span', {
-    className: 'subtle quote',
-    textContent: '"',
-  });
+  return <span className="subtle quote">"</span>;
 }
 
 function createComma() {
-  return createElement('span', {
-    className: 'subtle comma',
-    textContent: ',',
-  });
+  return <span className="subtle comma">,</span>;
 }
 
 function loadJSON() {
@@ -95,14 +57,8 @@ function loadJSON() {
     return {
       raw,
       content,
-      prefix: createElement('span', {
-        className: 'subtle',
-        textContent: parts[1].trim(),
-      }),
-      suffix: createElement('span', {
-        className: 'subtle',
-        textContent: parts[3].trim(),
-      }),
+      prefix: <span className="subtle">{parts[1].trim()}</span>,
+      suffix: <span className="subtle">{parts[3].trim()}</span>,
     };
   } catch (e) {
     // not JSONP
@@ -115,7 +71,7 @@ function formatJSON() {
   formatter.data = loadJSON();
   if (!formatter.data) return;
   formatter.style = GM_addStyle(css);
-  formatter.root = createElement('div', { id: 'json-formatter' });
+  formatter.root = <div id="json-formatter" />;
   document.body.innerHTML = '';
   document.body.append(formatter.root);
   initTips();
@@ -125,12 +81,10 @@ function formatJSON() {
 }
 
 function generateNodes(data, container) {
-  const pre = createElement('pre');
+  const rootSpan = <span />;
+  const root = <div>{rootSpan}</div>;
+  const pre = <pre>{root}</pre>;
   formatter.pre = pre;
-  const root = createElement('div');
-  const rootSpan = createElement('span');
-  root.append(rootSpan);
-  pre.append(root);
   const queue = [{ el: rootSpan, elBlock: root, ...data }];
   while (queue.length) {
     const item = queue.shift();
@@ -145,12 +99,7 @@ function generateNodes(data, container) {
     } else {
       const type = content == null ? 'null' : typeof content;
       if (type === 'string') el.append(createQuote());
-      const node = createElement('span', {
-        className: `${type} item`,
-        textContent: `${content}`,
-      });
-      node.dataset.type = type;
-      node.dataset.value = content;
+      const node = <span className={`${type} item`} data-type={type} data-value={content}>{`${content}`}</span>;
       el.append(node);
       if (type === 'string') el.append(createQuote());
     }
@@ -163,38 +112,25 @@ function generateNodes(data, container) {
 function setFolder(el, length) {
   if (length) {
     el.classList.add('complex');
-    el.append(createElement('div', {
-      className: 'folder',
-      textContent: '\u25b8',
-    }));
-    el.append(createElement('span', {
-      textContent: `// ${length} items`,
-      className: 'summary',
-    }));
+    el.append(
+      <div className="folder">{'\u25b8'}</div>,
+      <span className="summary">{`// ${length} items`}</span>,
+    );
   }
 }
 
 function generateArray({ el, elBlock, content }) {
-  const elContent = content.length && createElement('div', {
-    className: 'content',
-  });
+  const elContent = content.length && <div className="content" />;
   setFolder(elBlock, content.length);
   el.append(
-    createElement('span', {
-      textContent: '[',
-      className: 'bracket',
-    }),
+    <span className="bracket">[</span>,
     elContent || ' ',
-    createElement('span', {
-      textContent: ']',
-      className: 'bracket',
-    }),
+    <span className="bracket">]</span>,
   );
   return content.map((item, i) => {
-    const elChild = createElement('div');
+    const elValue = <span />;
+    const elChild = <div>{elValue}</div>;
     elContent.append(elChild);
-    const elValue = createElement('span');
-    elChild.append(elValue);
     if (i < content.length - 1) elChild.append(createComma());
     return {
       el: elValue,
@@ -206,38 +142,26 @@ function generateArray({ el, elBlock, content }) {
 
 function generateObject({ el, elBlock, content }) {
   const keys = Object.keys(content);
-  const elContent = keys.length && createElement('div', {
-    className: 'content',
-  });
+  const elContent = keys.length && <div className="content" />;
   setFolder(elBlock, keys.length);
   el.append(
-    createElement('span', {
-      textContent: '{',
-      className: 'bracket',
-    }),
+    <span className="bracket">{'{'}</span>,
     elContent || ' ',
-    createElement('span', {
-      textContent: '}',
-      className: 'bracket',
-    }),
+    <span className='bracket'>{'}'}</span>,
   );
   return keys.map((key, i) => {
-    const elChild = createElement('div');
-    elContent.append(elChild);
-    const elValue = createElement('span');
-    const node = createElement('span', {
-      className: 'key item',
-      textContent: key,
-    });
-    node.dataset.type = typeof key;
-    elChild.append(
-      createQuote(),
-      node,
-      createQuote(),
-      ': ',
-      elValue,
+    const elValue = <span />;
+    const elChild = (
+      <div>
+        {createQuote()}
+        <span className="key item" data-type={typeof key}>{key}</span>
+        {createQuote()}
+        {': '}
+        {elValue}
+      </div>
     );
     if (i < keys.length - 1) elChild.append(createComma());
+    elContent.append(elChild);
     return { el: elValue, content: content[key], elBlock: elChild };
   });
 }
@@ -253,25 +177,10 @@ function removeEl(el) {
 }
 
 function initMenu() {
-  const menu = createElement('div', {
-    className: 'menu',
-  });
-  const btnCopy = createElement('span', {
-    textContent: 'Copy',
-  });
-  btnCopy.addEventListener('click', () => {
+  const handleCopy = () => {
     GM_setClipboard(formatter.data.raw);
-  }, false);
-  menu.append(btnCopy);
-  formatter.options.forEach(item => {
-    const span = createElement('span', {
-      className: `toggle${config[item.key] ? ' active' : ''}`,
-      innerHTML: item.title,
-    });
-    span.dataset.key = item.key;
-    menu.append(span);
-  });
-  menu.addEventListener('click', e => {
+  };
+  const handleMenuClick = e => {
     const el = e.target;
     const { key } = el.dataset;
     if (key) {
@@ -280,18 +189,24 @@ function initMenu() {
       el.classList.toggle('active');
       updateView();
     }
-  }, false);
-  formatter.root.append(menu);
+  };
+  formatter.root.append((
+    <div className="menu" onClick={handleMenuClick}>
+      <span onClick={handleCopy}>Copy</span>
+      {formatter.options.map(item => (
+        <span
+          className={`toggle${config[item.key] ? ' active' : ''}`}
+          dangerouslySetInnerHTML={{ __html: item.title }}
+          data-key={item.key}
+        />
+      ))}
+    </div>
+  ));
 }
 
 function initTips() {
-  const tips = createElement('div', {
-    className: 'tips',
-  });
+  const tips = <div className="tips" onClick={e => { e.stopPropagation(); }} />;
   const hide = () => removeEl(tips);
-  tips.addEventListener('click', e => {
-    e.stopPropagation();
-  }, false);
   document.addEventListener('click', hide, false);
   formatter.tips = {
     node: tips,
@@ -311,13 +226,18 @@ function initTips() {
       }
       tips.style.left = `${rect.left}px`;
       const { type, value } = range.startContainer.dataset;
-      const html = [
-        `<span class="tips-key">type</span>: <span class="tips-val">${safeHTML(type)}</span>`,
-      ];
+      tips.innerHTML = '';
+      tips.append(
+        <span class="tips-key">type</span>,
+        ': ',
+        <span class="tips-val" dangerouslySetInnerHTML={{ __html: type }} />,
+      );
       if (type === 'string' && /^(https?|ftps?):\/\/\S+/.test(value)) {
-        html.push('<br>', `<a class="tips-link" href="${encodeURI(value)}" target="_blank">Open link</a>`);
+        tips.append(
+          <br />,
+          <a class="tips-link" href={value} target="_blank">Open link</a>,
+        );
       }
-      tips.innerHTML = html.join('');
       formatter.root.append(tips);
     },
   };

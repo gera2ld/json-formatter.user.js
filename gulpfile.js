@@ -1,8 +1,13 @@
+const fs = require('fs');
 const path = require('path');
 const gulp = require('gulp');
-const gutil = require('gulp-util');
-const eslint = require('gulp-eslint');
+const log = require('fancy-log');
 const rollup = require('rollup');
+const del = require('del');
+const babel = require('rollup-plugin-babel');
+const replace = require('rollup-plugin-replace');
+const resolve = require('rollup-plugin-node-resolve');
+const commonjs = require('rollup-plugin-commonjs');
 const postcss = require('postcss');
 const autoprefixer = require('autoprefixer');
 const precss = require('precss');
@@ -12,12 +17,11 @@ const pkg = require('./package.json');
 
 const DIST = 'dist';
 const IS_PROD = process.env.NODE_ENV === 'production';
-const USE_CSS_MODULES = false;
 const values = {
   'process.env.VERSION': pkg.version,
   'process.env.NODE_ENV': process.env.NODE_ENV || 'development',
 };
-
+const USE_CSS_MODULES = false;
 const cssExportMap = {};
 const postcssPlugins = [
   precss(),
@@ -30,51 +34,82 @@ const postcssPlugins = [
   IS_PROD && cssnano(),
 ].filter(Boolean);
 
-const rollupOptions = {
-  plugins: [
-    {
-      transform(code, id) {
-        if (path.extname(id) !== '.css') return;
-        return postcss(postcssPlugins).process(code, { from: id })
-        .then(result => {
-          const classMap = cssExportMap[id];
-          return [
-            `export const css = ${JSON.stringify(result.css)};`,
-            classMap && `export const classMap = ${JSON.stringify(classMap)};`,
-          ].filter(Boolean).join('\n');
-        });
-      },
+const getRollupPlugins = ({ babelConfig, browser } = {}) => [
+  {
+    transform(code, id) {
+      if (path.extname(id) !== '.css') return;
+      return postcss(postcssPlugins).process(code, { from: id })
+      .then(result => {
+        const classMap = cssExportMap[id];
+        return [
+          `export const css = ${JSON.stringify(result.css)};`,
+          classMap && `export const classMap = ${JSON.stringify(classMap)};`,
+        ].filter(Boolean).join('\n');
+      });
     },
-    require('rollup-plugin-babel')({
+  },
+  babel({
+    exclude: 'node_modules/**',
+    ...browser ? {
+      // Combine all helpers at the top of the bundle
+      externalHelpers: true,
+    } : {
+      // Require helpers from '@babel/runtime'
       runtimeHelpers: true,
-      exclude: 'node_modules/**',
-    }),
-    require('rollup-plugin-replace')({ values }),
-  ],
+      plugins: [
+        '@babel/plugin-transform-runtime',
+      ],
+    },
+    ...babelConfig,
+  }),
+  replace({ values }),
+  resolve(),
+  commonjs(),
+];
+const getExternal = (externals = []) => id => {
+  return id.startsWith('@babel/runtime/') || externals.includes(id);
 };
 
-gulp.task('js', () => {
-  return rollup.rollup(Object.assign({
-    input: 'src/app.js',
-  }, rollupOptions))
-  .then(bundle => bundle.write({
-    file: `${DIST}/app.user.js`,
-    format: 'iife',
-  }))
+const rollupConfig = [
+  {
+    input: {
+      input: 'src/index.js',
+      plugins: getRollupPlugins({ browser: false }),
+      external: getExternal(),
+    },
+    output: {
+      format: 'cjs',
+      file: `${DIST}/index.user.js`,
+    },
+  },
+];
+
+function clean() {
+  return del(DIST);
+}
+
+function buildJs() {
+  return Promise.all(rollupConfig.map(config => {
+    return rollup.rollup(config.input)
+    .then(bundle => bundle.write(config.output));
+  }));
+}
+
+function wrapError(handle) {
+  const wrapped = () => handle()
   .catch(err => {
-    gutil.log(err.toString());
+    log(err.toString());
   });
-});
+  wrapped.displayName = handle.name;
+  return wrapped;
+}
 
-gulp.task('lint', () => {
-  return gulp.src('src/**/*.js')
-  .pipe(eslint())
-  .pipe(eslint.format())
-  .pipe(eslint.failAfterError());
-});
+function watch() {
+  gulp.watch('src/**', safeBuildJs);
+}
 
-gulp.task('build', ['js']);
+const safeBuildJs = wrapError(buildJs);
 
-gulp.task('watch', ['build'], () => {
-  gulp.watch('src/**', ['js']);
-});
+exports.clean = clean;
+exports.build = buildJs;
+exports.dev = gulp.series(safeBuildJs, watch);
