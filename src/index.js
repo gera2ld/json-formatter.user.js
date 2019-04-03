@@ -43,6 +43,8 @@ function createComma() {
 
 function loadJSON() {
   const raw = document.body.innerText;
+  // LosslessJSON is much slower than native JSON, so we just use it for small JSON files.
+  const JSON = raw.length > 1024000 ? window.JSON : window.LosslessJSON;
   try {
     // JSON
     const content = JSON.parse(raw);
@@ -94,12 +96,12 @@ function generateNodes(data, container) {
     if (prefix) el.append(prefix);
     if (Array.isArray(content)) {
       queue.push(...generateArray(item));
-    } else if (content && typeof content === 'object') {
+    } else if (isObject(content)) {
       queue.push(...generateObject(item));
     } else {
-      const type = content == null ? 'null' : typeof content;
+      const type = typeOf(content);
       if (type === 'string') el.append(createQuote());
-      const node = <span className={`${type} item`} data-type={type} data-value={content}>{`${content}`}</span>;
+      const node = <span className={`${type} item`} data-type={type} data-value={content}>{toString(content)}</span>;
       el.append(node);
       if (type === 'string') el.append(createQuote());
     }
@@ -107,6 +109,22 @@ function generateNodes(data, container) {
   }
   container.append(pre);
   updateView();
+}
+
+function isObject(item) {
+  if (item instanceof window.LosslessJSON.LosslessNumber) return false;
+  return item && typeof item === 'object';
+}
+
+function typeOf(item) {
+  if (item == null) return 'null';
+  if (item instanceof window.LosslessJSON.LosslessNumber) return 'number';
+  return typeof item;
+}
+
+function toString(content) {
+  if (content instanceof window.LosslessJSON.LosslessNumber) return content.toString();
+  return `${content}`;
 }
 
 function setFolder(el, length) {

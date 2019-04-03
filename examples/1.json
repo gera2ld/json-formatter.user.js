@@ -2,6 +2,7 @@
   "boolean": true,
   "null": null,
   "number": 123,
+  "big number": 12345678901234567890,
   "string": "string",
   "empty array": [],
   "empty object": {},
