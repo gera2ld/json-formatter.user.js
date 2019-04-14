@@ -1,33 +1,9 @@
 module.exports = {
   root: true,
-  extends: 'airbnb-base',
-  parser: 'babel-eslint',
-  parserOptions: {
-    sourceType: 'module'
-  },
-  env: {
-    browser: true,
-  },
-  plugins: [
-    'import',
-    'react',
+  extends: [
+    require.resolve('@gera2ld/plaid/eslint'),
+    require.resolve('@gera2ld/plaid-react/eslint/react'),
   ],
-  rules: {
-    'no-use-before-define': ['error', 'nofunc'],
-    'no-mixed-operators': 'off',
-    'arrow-parens': 'off',
-    'no-plusplus': 'off',
-    'no-param-reassign': 'off',
-    'consistent-return': 'off',
-    'no-console': ['warn', {
-      allow: ['error', 'warn', 'info'],
-    }],
-    'no-bitwise': ['error', { int32Hint: true }],
-    'import/prefer-default-export': 'off',
-    indent: ['error', 2, { MemberExpression: 0 }],
-    'react/jsx-uses-react': 'error',
-    'react/react-in-jsx-scope': 'error',
-  },
   settings: {
     'import/resolver': {
       'babel-module': {},
@@ -38,10 +14,13 @@ module.exports = {
   },
   globals: {
     VM: true,
+    GM_addStyle: true,
     GM_getValue: true,
     GM_setValue: true,
-    GM_addStyle: true,
-    GM_registerMenuCommand: true,
     GM_setClipboard: true,
+    GM_registerMenuCommand: true,
+  },
+  rules: {
+    'react/no-danger': 'off',
   },
 };

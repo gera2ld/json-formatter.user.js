@@ -34,7 +34,7 @@ if ([
 GM_registerMenuCommand('Toggle JSON format', formatJSON);
 
 function createQuote() {
-  return <span className="subtle quote">"</span>;
+  return <span className="subtle quote">&quot;</span>;
 }
 
 function createComma() {
@@ -165,7 +165,7 @@ function generateObject({ el, elBlock, content }) {
   el.append(
     <span className="bracket">{'{'}</span>,
     elContent || ' ',
-    <span className='bracket'>{'}'}</span>,
+    <span className="bracket">{'}'}</span>,
   );
   return keys.map((key, i) => {
     const elValue = <span />;
@@ -198,7 +198,7 @@ function initMenu() {
   const handleCopy = () => {
     GM_setClipboard(formatter.data.raw);
   };
-  const handleMenuClick = e => {
+  const handleMenuClick = (e) => {
     const el = e.target;
     const { key } = el.dataset;
     if (key) {
@@ -223,7 +223,7 @@ function initMenu() {
 }
 
 function initTips() {
-  const tips = <div className="tips" onClick={e => { e.stopPropagation(); }} />;
+  const tips = <div className="tips" onClick={(e) => { e.stopPropagation(); }} />;
   const hide = () => removeEl(tips);
   document.addEventListener('click', hide, false);
   formatter.tips = {
@@ -246,14 +246,14 @@ function initTips() {
       const { type, value } = range.startContainer.dataset;
       tips.innerHTML = '';
       tips.append(
-        <span class="tips-key">type</span>,
+        <span className="tips-key">type</span>,
         ': ',
-        <span class="tips-val" dangerouslySetInnerHTML={{ __html: type }} />,
+        <span className="tips-val" dangerouslySetInnerHTML={{ __html: type }} />,
       );
       if (type === 'string' && /^(https?|ftps?):\/\/\S+/.test(value)) {
         tips.append(
           <br />,
-          <a class="tips-link" href={value} target="_blank">Open link</a>,
+          <a className="tips-link" href={value} target="_blank" rel="noopener noreferrer">Open link</a>,
         );
       }
       formatter.root.append(tips);
@@ -272,7 +272,7 @@ function selectNode(node) {
 }
 
 function bindEvents() {
-  formatter.root.addEventListener('click', e => {
+  formatter.root.addEventListener('click', (e) => {
     e.stopPropagation();
     const { target } = e;
     if (target.classList.contains('item')) {
