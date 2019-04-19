@@ -101,7 +101,7 @@ function generateNodes(data, container) {
     } else {
       const type = typeOf(content);
       if (type === 'string') el.append(createQuote());
-      const node = <span className={`${type} item`} data-type={type} data-value={content}>{toString(content)}</span>;
+      const node = <span className={`${type} item`} data-type={type} data-value={toString(content)}>{toString(content)}</span>;
       el.append(node);
       if (type === 'string') el.append(createQuote());
     }
