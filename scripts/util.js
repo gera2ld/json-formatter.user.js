@@ -1,10 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const babel = require('rollup-plugin-babel');
-const replace = require('rollup-plugin-replace');
-const resolve = require('rollup-plugin-node-resolve');
-const commonjs = require('rollup-plugin-commonjs');
-const alias = require('rollup-plugin-alias');
+const replace = require('@rollup/plugin-replace');
+const resolve = require('@rollup/plugin-node-resolve');
+const commonjs = require('@rollup/plugin-commonjs');
+const alias = require('@rollup/plugin-alias');
 const postcss = require('postcss');
 const cssModules = require('postcss-modules');
 const pkg = require('../package.json');
@@ -16,17 +16,15 @@ const values = {
 const rollupPluginMap = {
   css: () => cssPlugin(),
   alias: aliases => alias(aliases),
-  babel: ({ babelConfig, browser }) => babel({
-    ...browser ? {
-      // Combine all helpers at the top of the bundle
-      externalHelpers: true,
-    } : {
-      // Require helpers from '@babel/runtime'
-      runtimeHelpers: true,
-      plugins: [
-        '@babel/plugin-transform-runtime',
-      ],
-    },
+  babel: ({ babelConfig, esm }) => babel({
+    // import helpers from '@babel/runtime'
+    runtimeHelpers: true,
+    plugins: [
+      ['@babel/plugin-transform-runtime', {
+        useESModules: esm,
+        version: '^7.5.0', // see https://github.com/babel/babel/issues/10261#issuecomment-514687857
+      }],
+    ],
     exclude: 'node_modules/**',
     ...babelConfig,
   }),
@@ -34,9 +32,6 @@ const rollupPluginMap = {
   resolve: () => resolve(),
   commonjs: () => commonjs(),
 };
-
-exports.getRollupPlugins = getRollupPlugins;
-exports.getExternal = getExternal;
 
 function getPostcssPlugins({ cssModules } = {}) {
   return [
@@ -58,7 +53,9 @@ function cssPlugin() {
     name: 'CSSPlugin',
     resolveId(importee, importer) {
       if (importee.endsWith('.css')) {
-        return path.resolve(path.dirname(importer), `${importee}.js`);
+        const cssId = path.resolve(path.dirname(importer), importee);
+        this.addWatchFile(cssId);
+        return `${cssId}.js`;
       }
     },
     load(id) {
@@ -96,11 +93,11 @@ function cssPlugin() {
   };
 }
 
-function getRollupPlugins({ babelConfig, browser, aliases } = {}) {
+function getRollupPlugins({ babelConfig, esm, aliases } = {}) {
   return [
     aliases && rollupPluginMap.alias(aliases),
     rollupPluginMap.css(),
-    rollupPluginMap.babel({ babelConfig, browser }),
+    rollupPluginMap.babel({ babelConfig, esm }),
     rollupPluginMap.replace(),
     rollupPluginMap.resolve(),
     rollupPluginMap.commonjs(),
@@ -108,5 +105,15 @@ function getRollupPlugins({ babelConfig, browser, aliases } = {}) {
 }
 
 function getExternal(externals = []) {
-  return id => id.startsWith('@babel/runtime/') || externals.includes(id);
+  return id => {
+    if (/^@babel\/runtime[-/]/.test(id)) return true;
+    return externals.some(pattern => {
+      if (pattern && typeof pattern.test === 'function') return pattern.test(id);
+      return id === pattern || id.startsWith(pattern + '/');
+    });
+  };
 }
+
+exports.getRollupPlugins = getRollupPlugins;
+exports.getExternal = getExternal;
+exports.DIST = 'dist';

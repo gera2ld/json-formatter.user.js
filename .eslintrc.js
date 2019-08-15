@@ -9,7 +9,7 @@ module.exports = {
       'babel-module': {},
     },
     react: {
-      pragma: 'h',
+      pragma: 'React',
     },
   },
   globals: {

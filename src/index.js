@@ -1,7 +1,6 @@
-import './meta';
 import { css } from './style.css';
 
-const h = VM.createElement;
+const React = VM;
 
 const gap = 5;
 
