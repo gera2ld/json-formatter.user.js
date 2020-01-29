@@ -7,7 +7,6 @@
 // @description:zh-CN 更加漂亮地显示JSON数据。
 // @version     process.env.VERSION
 // @require https://cdn.jsdelivr.net/npm/@violentmonkey/dom@1
-// @require https://cdn.jsdelivr.net/npm/lossless-json@1.0.3
 // @match       *://*/*
 // @match       file:///*
 // @grant       GM_getValue

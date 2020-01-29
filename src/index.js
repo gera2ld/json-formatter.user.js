@@ -40,21 +40,185 @@ function createComma() {
   return <span className="subtle comma">,</span>;
 }
 
+function tokenize(raw) {
+  const skipWhitespace = index => {
+    while (index < raw.length && ' \t\r\n'.includes(raw[index])) index += 1;
+    return index;
+  };
+  const expectIndex = index => {
+    if (index < raw.length) return index;
+    throw new Error('Unexpected end of input');
+  };
+  const expectChar = (index, white, black) => {
+    const ch = raw[index];
+    if (white && !white.includes(ch) || black && black.includes(ch)) {
+      throw new Error(`Unexpected token "${ch}" at ${index}`);
+    }
+    return ch;
+  };
+  const findWord = (index, words) => {
+    for (const word of words) {
+      if (raw.slice(index, index + word.length) === word) {
+        return word;
+      }
+    }
+  };
+  const expectSpaceAndCharIndex = (index, white, black) => {
+    const i = expectIndex(skipWhitespace(index));
+    expectChar(i, white, black);
+    return i;
+  };
+  const parseString = start => {
+    let j;
+    for (j = start + 1; true; j = expectIndex(j + 1)) {
+      const ch = raw[j];
+      if (ch === '"') break;
+      if (ch === '\\') {
+        j = expectIndex(j + 1);
+        const ch2 = raw[j];
+        if (ch2 === 'x') {
+          j = expectIndex(j + 2);
+        } else if (ch2 === 'u') {
+          j = expectIndex(j + 4);
+        }
+      }
+    }
+    const source = raw.slice(start + 1, j);
+    return {
+      type: 'string',
+      source,
+      data: source,
+      start,
+      end: j + 1,
+    };
+  };
+  const parseKeyword = (start) => {
+    const nullWord = findWord(start, ['null']);
+    if (nullWord) {
+      return {
+        type: 'null',
+        source: 'null',
+        data: null,
+        start,
+        end: start + 4,
+      };
+    }
+    const bool = findWord(start, ['true', 'false']);
+    if (bool) {
+      return {
+        type: 'boolean',
+        source: bool,
+        data: bool === 'true',
+        start,
+        end: start + bool.length,
+      };
+    }
+    expectChar(start, '0');
+  };
+  const DIGITS = '0123456789';
+  const findDecimal = (start, fractional) => {
+    let i = start;
+    if ('+-'.includes(raw[i])) i += 1;
+    let j;
+    let dot = -1;
+    for (j = i; true; j = expectIndex(j + 1)) {
+      const ch = expectChar(
+        j,
+        // there must be at least one digit
+        // dot must not be the last character of a number, expecting a digit
+        j === i || dot >= 0 && dot === j - 1 ? DIGITS : null,
+        // there can be at most one dot
+        !fractional || dot >= 0 ? '.' : null,
+      );
+      if (ch === '.') dot = j;
+      else if (!DIGITS.includes(ch)) break;
+    }
+    return j;
+  };
+  const parseNumber = (start) => {
+    let i = findDecimal(start, true);
+    const ch = raw[i];
+    if (ch && ch.toLowerCase() === 'e') {
+      i = findDecimal(i + 1);
+    }
+    const source = raw.slice(start, i);
+    return {
+      type: 'number',
+      source,
+      data: +source,
+      start,
+      end: i,
+    };
+  };
+  let parseItem;
+  const parseArray = (start) => {
+    const result = {
+      type: 'array',
+      data: [],
+      start,
+    };
+    let i = start + 1;
+    while (true) {
+      i = expectIndex(skipWhitespace(i));
+      if (raw[i] === ']') break;
+      if (result.data.length) i = expectSpaceAndCharIndex(i, ',') + 1;
+      const item = parseItem(i);
+      result.data.push(item);
+      i = item.end;
+    }
+    result.end = i + 1;
+    return result;
+  };
+  const parseObject = (start) => {
+    const result = {
+      type: 'object',
+      data: [],
+      start,
+    };
+    let i = start + 1;
+    while (true) {
+      i = expectIndex(skipWhitespace(i));
+      if (raw[i] === '}') break;
+      if (result.data.length) i = expectSpaceAndCharIndex(i, ',') + 1;
+      i = expectSpaceAndCharIndex(i, '"');
+      const key = parseString(i);
+      i = expectSpaceAndCharIndex(key.end, ':') + 1;
+      const value = parseItem(i);
+      result.data.push({ key, value });
+      i = value.end;
+    }
+    result.end = i + 1;
+    return result;
+  };
+  parseItem = (start) => {
+    const i = expectIndex(skipWhitespace(start));
+    const ch = raw[i];
+    if (ch === '"') return parseString(i);
+    if (ch === '[') return parseArray(i);
+    if (ch === '{') return parseObject(i);
+    if ('-0123456789'.includes(ch)) return parseNumber(i);
+    return parseKeyword(i);
+  };
+  const result = parseItem(0);
+  const end = skipWhitespace(result.end);
+  if (end < raw.length) expectChar(end, []);
+  return result;
+}
+
 function loadJSON() {
   const raw = document.body.innerText;
-  // LosslessJSON is much slower than native JSON, so we just use it for small JSON files.
-  const JSON = raw.length > 1024000 ? window.JSON : window.LosslessJSON;
   try {
     // JSON
-    const content = JSON.parse(raw);
+    const content = tokenize(raw);
     return { raw, content };
   } catch (e) {
     // not JSON
+    console.error('Not JSON', e);
   }
   try {
     // JSONP
     const parts = raw.match(/^(.*?\w\s*\()(.+)(\)[;\s]*)$/);
-    const content = JSON.parse(parts[2]);
+    const content = tokenize(parts[2]);
     return {
       raw,
       content,
@@ -63,6 +227,7 @@ function loadJSON() {
     };
   } catch (e) {
     // not JSONP
+    console.error('Not JSONP', e);
   }
 }
 
@@ -93,12 +258,12 @@ function generateNodes(data, container) {
       el, content, prefix, suffix,
     } = item;
     if (prefix) el.append(prefix);
-    if (Array.isArray(content)) {
+    if (content.type === 'array') {
       queue.push(...generateArray(item));
-    } else if (isObject(content)) {
+    } else if (content.type === 'object') {
       queue.push(...generateObject(item));
     } else {
-      const type = typeOf(content);
+      const { type } = content;
       if (type === 'string') el.append(createQuote());
       const node = <span className={`${type} item`} data-type={type} data-value={toString(content)}>{toString(content)}</span>;
       el.append(node);
@@ -110,20 +275,8 @@ function generateNodes(data, container) {
   updateView();
 }
 
-function isObject(item) {
-  if (item instanceof window.LosslessJSON.LosslessNumber) return false;
-  return item && typeof item === 'object';
-}
-
-function typeOf(item) {
-  if (item == null) return 'null';
-  if (item instanceof window.LosslessJSON.LosslessNumber) return 'number';
-  return typeof item;
-}
-
 function toString(content) {
-  if (content instanceof window.LosslessJSON.LosslessNumber) return content.toString();
-  return `${content}`;
+  return `${content.source}`;
 }
 
 function setFolder(el, length) {
@@ -137,18 +290,18 @@ function setFolder(el, length) {
 }
 
 function generateArray({ el, elBlock, content }) {
-  const elContent = content.length && <div className="content" />;
-  setFolder(elBlock, content.length);
+  const elContent = content.data.length && <div className="content" />;
+  setFolder(elBlock, content.data.length);
   el.append(
     <span className="bracket">[</span>,
     elContent || ' ',
     <span className="bracket">]</span>,
   );
-  return content.map((item, i) => {
+  return content.data.map((item, i) => {
     const elValue = <span />;
     const elChild = <div>{elValue}</div>;
     elContent.append(elChild);
-    if (i < content.length - 1) elChild.append(createComma());
+    if (i < content.data.length - 1) elChild.append(createComma());
     return {
       el: elValue,
       elBlock: elChild,
@@ -158,28 +311,27 @@ function generateArray({ el, elBlock, content }) {
 }
 
 function generateObject({ el, elBlock, content }) {
-  const keys = Object.keys(content);
-  const elContent = keys.length && <div className="content" />;
-  setFolder(elBlock, keys.length);
+  const elContent = content.data.length && <div className="content" />;
+  setFolder(elBlock, content.data.length);
   el.append(
     <span className="bracket">{'{'}</span>,
     elContent || ' ',
     <span className="bracket">{'}'}</span>,
   );
-  return keys.map((key, i) => {
+  return content.data.map(({ key, value }, i) => {
     const elValue = <span />;
     const elChild = (
       <div>
         {createQuote()}
-        <span className="key item" data-type={typeof key}>{key}</span>
+        <span className="key item" data-type={key.type}>{key.data}</span>
         {createQuote()}
         {': '}
         {elValue}
       </div>
     );
-    if (i < keys.length - 1) elChild.append(createComma());
+    if (i < content.data.length - 1) elChild.append(createComma());
     elContent.append(elChild);
-    return { el: elValue, content: content[key], elBlock: elChild };
+    return { el: elValue, content: value, elBlock: elChild };
   });
 }
 
