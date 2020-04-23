@@ -47,42 +47,31 @@ function cssPlugin() {
   const cssMap = {};
   const postcssPlugins = {
     css: getPostcssPlugins(),
-    cssModules: getPostcssPlugins({ cssModules: { cssMap } }),
+    cssModules: getPostcssPlugins({
+      cssModules: {
+        getJSON(cssFilename, json) {
+          cssMap[cssFilename] = json;
+        },
+      },
+    }),
   };
   return {
     name: 'CSSPlugin',
-    resolveId(importee, importer) {
-      if (importee.endsWith('.css')) {
-        const cssId = path.resolve(path.dirname(importer), importee);
-        this.addWatchFile(cssId);
-        return `${cssId}.js`;
-      }
-    },
-    load(id) {
-      if (id.endsWith('.css.js')) {
-        return new Promise((resolve, reject) => {
-          fs.readFile(id.slice(0, -3), 'utf8', (err, data) => {
-            if (err) reject(err);
-            else resolve(data);
-          });
-        });
-      }
-    },
     transform(code, id) {
+      this.addWatchFile(id);
       let plugins;
-      const filename = id.slice(0, -3);
-      if (filename.endsWith('.module.css')) {
+      if (id.endsWith('.module.css')) {
         plugins = postcssPlugins.cssModules;
-      } else if (filename.endsWith('.css')) {
+      } else if (id.endsWith('.css')) {
         plugins = postcssPlugins.css;
       }
       if (plugins) {
         return postcss(plugins).process(code, {
-          from: filename,
+          from: id,
           parser: require('postcss-scss'),
         })
         .then(result => {
-          const classMap = cssMap[filename];
+          const classMap = cssMap[id];
           return [
             `export const css = ${JSON.stringify(result.css)};`,
             classMap && `export const classMap = ${JSON.stringify(classMap)};`,
