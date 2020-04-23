@@ -44,6 +44,14 @@ body {
 .bracket {
   color: blue;
 }
+.color {
+  display: inline-block;
+  width: .8em;
+  height: .8em;
+  margin: 0 .2em;
+  border: 1px solid #666;
+  vertical-align: -.1em;
+}
 .item {
   cursor: pointer;
 }

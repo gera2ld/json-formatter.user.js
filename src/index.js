@@ -40,6 +40,10 @@ function createComma() {
   return <span className="subtle comma">,</span>;
 }
 
+function isColor(str) {
+  return /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(str);
+}
+
 function tokenize(raw) {
   const skipWhitespace = index => {
     while (index < raw.length && ' \t\r\n'.includes(raw[index])) index += 1;
@@ -88,6 +92,7 @@ function tokenize(raw) {
       type: 'string',
       source,
       data: source,
+      color: isColor(source),
       start,
       end: j + 1,
     };
@@ -263,10 +268,14 @@ function generateNodes(data, container) {
     } else if (content.type === 'object') {
       queue.push(...generateObject(item));
     } else {
-      const { type } = content;
+      const { type, color } = content;
       if (type === 'string') el.append(createQuote());
-      const node = <span className={`${type} item`} data-type={type} data-value={toString(content)}>{toString(content)}</span>;
-      el.append(node);
+      if (color) el.append(<span className="color" style={`background-color: ${content.data}`} />);
+      el.append((
+        <span className={`${type} item`} data-type={type} data-value={toString(content)}>
+          {toString(content)}
+        </span>
+      ));
       if (type === 'string') el.append(createQuote());
     }
     if (suffix) el.append(suffix);
