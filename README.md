@@ -11,6 +11,7 @@ This is a userscript for browsers to display JSON data beautifully.
 1. Support JSONP
 1. Support folding complex objects
 1. Discover links
+1. Show colors
 
 ## Installation
 
