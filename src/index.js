@@ -1,4 +1,4 @@
-import { css } from './style.css';
+import css from './style.css';
 
 const React = VM;
 

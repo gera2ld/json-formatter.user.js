@@ -3,13 +3,7 @@ module.exports = {
   presets: [
   ],
   plugins: [
-    ['module-resolver', {
-      alias: {
-        '#': './src',
-      },
-    }],
-
-    // react
+    // JSX
     '@babel/plugin-transform-react-jsx',
   ].filter(Boolean),
 };

@@ -1,18 +1,22 @@
 const fs = require('fs');
-const rollup = require('rollup');
-const { getRollupPlugins, getExternal, DIST } = require('./scripts/util');
+const { getRollupPlugins } = require('@gera2ld/plaid');
 const pkg = require('./package.json');
 
+const DIST = 'dist';
 const FILENAME = 'json-formatter';
 const BANNER = fs.readFileSync('src/meta.js', 'utf8')
 .replace('process.env.VERSION', pkg.version);
 
-const external = getExternal();
 const rollupConfig = [
   {
     input: {
       input: 'src/index.js',
-      plugins: getRollupPlugins({ browser: true }),
+      plugins: getRollupPlugins({
+        browser: true,
+        postcss: {
+          inject: false,
+        },
+      }),
     },
     output: {
       format: 'iife',
