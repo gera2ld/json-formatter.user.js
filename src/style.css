@@ -73,11 +73,13 @@ body {
   &::before {
     content: '';
     position: absolute;
+    width: .3em;
     top: 1.5em;
     left: -.5em;
     bottom: .7em;
     margin-left: -1px;
     border-left: 1px dashed #999;
+    border-bottom: 1px dashed #999;
   }
   &.collapse::before {
     display: none;
