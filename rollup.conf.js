@@ -15,6 +15,7 @@ const rollupConfig = [
         browser: true,
         postcss: {
           inject: false,
+          minimize: true,
         },
       }),
     },
