@@ -24,13 +24,22 @@ const config = {
   ...GM_getValue('config'),
 };
 
-if ([
-  'application/json',
-  'text/plain',
-  'application/javascript',
-  'text/javascript', // file:///foo/bar.js
-].includes(document.contentType)) formatJSON();
+if (testRules([
+  // text/javascript - file:///foo/bar.js
+  /^(?:text|application)\/(?:.*?\+)?(?:plain|json|javascript)$/,
+], document.contentType)) formatJSON();
 GM_registerMenuCommand('Toggle JSON format', formatJSON);
+
+function testRules(rules, contentType) {
+  for (const rule of rules) {
+    if (typeof rule === 'string') {
+      if (rule === contentType) return true;
+    } else if (typeof rule?.test === 'function') {
+      if (rule.test(contentType)) return true;
+    }
+  }
+  return false;
+}
 
 function createQuote() {
   return <span className="subtle quote">&quot;</span>;
