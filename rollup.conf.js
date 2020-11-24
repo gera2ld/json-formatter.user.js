@@ -7,16 +7,18 @@ const FILENAME = 'json-formatter';
 const BANNER = fs.readFileSync('src/meta.js', 'utf8')
 .replace('process.env.VERSION', pkg.version);
 
+const postcssOptions = {
+  ...require('@gera2ld/plaid/config/postcssrc'),
+  inject: false,
+  minimize: true,
+};
 const rollupConfig = [
   {
     input: {
       input: 'src/index.js',
       plugins: getRollupPlugins({
         browser: true,
-        postcss: {
-          inject: false,
-          minimize: true,
-        },
+        postcss: postcssOptions,
       }),
     },
     output: {
