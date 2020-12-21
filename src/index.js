@@ -107,7 +107,7 @@ function tokenize(raw) {
     return {
       type: 'string',
       source,
-      data: source,
+      data: JSON.parse(raw.slice(start, j + 1)),
       color: isColor(source),
       start,
       end: j + 1,
@@ -286,18 +286,20 @@ function generateNodes(data, container) {
       queue.push(...generateObject(item));
     } else {
       const { type, color } = content;
-      if (type === 'string') el.append(createQuote());
-      if (color) el.append(<span className="color" style={`background-color: ${content.data}`} />);
+      const children = [];
+      if (type === 'string') children.push(createQuote());
+      if (color) children.push(<span className="color" style={`background-color: ${content.data}`} />);
+      children.push(toString(content));
+      if (type === 'string') children.push(createQuote());
       const className = [
         classMap[type],
         'item',
       ].filter(Boolean).join(' ');
       el.append((
-        <span className={className} data-type={type} data-value={toString(content)}>
-          {toString(content)}
+        <span className={className} data-type={type} data-value={content.data}>
+          {children}
         </span>
       ));
-      if (type === 'string') el.append(createQuote());
     }
     if (suffix) el.append(suffix);
   }
@@ -352,9 +354,11 @@ function generateObject({ el, elBlock, content }) {
     const elValue = <span />;
     const elChild = (
       <div>
-        {createQuote()}
-        <span className="cm-property item" data-type={key.type}>{key.data}</span>
-        {createQuote()}
+        <span className="cm-property item" data-type={key.type}>
+          {createQuote()}
+          {key.data}
+          {createQuote()}
+        </span>
         {': '}
         {elValue}
       </div>
@@ -431,11 +435,20 @@ function initTips() {
         ': ',
         <span className="tips-val" dangerouslySetInnerHTML={{ __html: type }} />,
       );
-      if (type === 'string' && /^(https?|ftps?):\/\/\S+/.test(value)) {
+      if (type === 'string') {
+        const handleCopyParsed = () => {
+          GM_setClipboard(value);
+        };
         tips.append(
           <br />,
-          <a className="tips-link" href={value} target="_blank" rel="noopener noreferrer">Open link</a>,
+          <span className="tips-link" onClick={handleCopyParsed}>Copy parsed</span>,
         );
+        if (/^(https?|ftps?):\/\/\S+/.test(value)) {
+          tips.append(
+            <br />,
+            <a className="tips-link" href={value} target="_blank" rel="noopener noreferrer">Open link</a>,
+          );
+        }
       }
       formatter.root.append(tips);
     },
@@ -447,7 +460,7 @@ function selectNode(node) {
   selection.removeAllRanges();
   const range = document.createRange();
   range.setStartBefore(node.firstChild);
-  range.setEndAfter(node.firstChild);
+  range.setEndAfter(node.lastChild);
   selection.addRange(range);
   return range;
 }

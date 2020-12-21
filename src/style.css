@@ -74,7 +74,7 @@ body {
     @apply text-yellow-600;
   }
   &-link {
-    @apply text-red-500;
+    @apply text-red-500 cursor-pointer;
     &:hover {
       @apply text-red-400;
     }
