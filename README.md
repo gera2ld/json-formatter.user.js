@@ -28,9 +28,9 @@ Then install the script from:
 
 ## Snapshots
 
-![json](https://user-images.githubusercontent.com/3139113/33613649-218d2526-da10-11e7-8564-9073391b7f67.png)
+<img width="527" alt="JSON" src="https://user-images.githubusercontent.com/3139113/102758476-c0eb9580-43ad-11eb-861c-54f41c4981e4.png">
 
-![jsonp](https://cloud.githubusercontent.com/assets/3139113/26823105/ff5d03ba-4ade-11e7-8069-c79fe1357368.png)
+<img width="527" alt="JSONP" src="https://user-images.githubusercontent.com/3139113/102758763-2ccdfe00-43ae-11eb-8048-848827cf6f05.png">
 
 ## Development
 
