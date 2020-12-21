@@ -10,7 +10,15 @@
   "non-empty array": [1, 2],
   "non-empty object": { "a": 1, "b": 2 },
   "url": "https://www.google.com",
+  "special characters": "\b\r\n\t\f\\\/",
   "emoji": "😀",
+  "colors": [
+    "#f00",
+    "#0f0",
+    "#00f",
+    "#f1f2f3",
+    "#fff7"
+  ],
   "complex": [{
     "a": 1,
     "b": 2,

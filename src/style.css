@@ -1,67 +1,36 @@
-* {
-  margin: 0;
-  padding: 0;
-}
+@import 'tailwindcss/base';
 
-html,
 body {
   font-family: Menlo, "Microsoft YaHei", Tahoma;
+  background: #343434;
 }
 
 #json-formatter {
-  position: relative;
-  margin: 0;
-  padding: 2em 1em 1em 2em;
-  font-size: 14px;
-  line-height: 1.5;
+  @apply relative h-screen flex flex-col p-2 text-sm;
   > pre {
-    white-space: pre-wrap;
+    @apply flex-1 min-h-0 overflow-auto px-4 whitespace-pre-wrap;
     &:not(.show-quotes) .quote,
     &:not(.show-commas) .comma {
-      display: none;
+      @apply hidden;
     }
   }
 }
 
-.subtle {
-  color: #999;
-}
-.number {
-  color: darkorange;
-}
-.null {
-  color: gray;
-}
-.key {
-  color: brown;
-}
-.string {
-  color: green;
-}
-.boolean {
-  color: dodgerblue;
-}
-.bracket {
-  color: blue;
+.quote {
+  color: #878787;
 }
 .color {
-  display: inline-block;
-  width: .8em;
-  height: .8em;
-  margin: 0 .2em;
-  border: 1px solid #666;
-  vertical-align: -.1em;
+  @apply inline-block w-3 h-3 mx-1 border border-gray-400;
 }
 .item {
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 .content {
-  padding-left: 2em;
+  @apply pl-4;
   .collapse > span > & {
-    display: inline;
-    padding-left: 0;
+    @apply pl-0 inline;
     > * {
-      display: none;
+      @apply hidden;
     }
     &::before {
       content: '...';
@@ -69,81 +38,56 @@ body {
   }
 }
 .complex {
-  position: relative;
+  @apply relative;
   &::before {
+    @apply absolute w-1 border-l border-b border-gray-400;
     content: '';
-    position: absolute;
-    width: .3em;
     top: 1.5em;
     left: -.5em;
     bottom: .7em;
     margin-left: -1px;
-    border-left: 1px dashed #999;
-    border-bottom: 1px dashed #999;
   }
   &.collapse::before {
-    display: none;
+    @apply hidden;
   }
 }
 .folder {
-  color: #999;
-  position: absolute;
-  top: 0;
+  @apply absolute text-gray-500 top-0 w-2 text-center transition-transform duration-300 rotate-90 cursor-pointer;
   left: -1em;
-  width: 1em;
-  text-align: center;
-  transform: rotate(90deg);
-  transition: transform .3s;
-  cursor: pointer;
   .collapse > & {
-    transform: rotate(0);
+    @apply rotate-0;
   }
 }
 .summary {
-  color: #999;
-  margin-left: 1em;
+  @apply ml-4 text-gray-400;
   *:not(.collapse) > & {
-    display: none;
+    @apply hidden;
   }
 }
 
 .tips {
-  position: absolute;
-  padding: .5em;
-  border-radius: .5em;
-  box-shadow: 0 0 1em gray;
-  background: white;
-  z-index: 1;
-  white-space: nowrap;
-  color: black;
+  @apply absolute rounded p-2 shadow bg-gray-700 z-10 whitespace-no-wrap text-white;
   &-key {
-    font-weight: bold;
+    @apply font-semibold;
   }
   &-val {
-    color: dodgerblue;
+    @apply text-yellow-600;
   }
   &-link {
-    color: slateblue;
+    @apply text-red-500;
+    &:hover {
+      @apply text-red-400;
+    }
   }
 }
 .menu {
-  position: fixed;
-  top: 0;
-  right: 0;
-  background: white;
-  padding: 5px;
+  @apply p-2 text-right text-white;
   user-select: none;
-  z-index: 10;
   > span {
-    display: inline-block;
-    padding: 4px 8px;
-    margin-right: 5px;
-    border-radius: 4px;
-    background: #ddd;
-    border: 1px solid #ddd;
-    cursor: pointer;
-    &.toggle:not(.active) {
-      background: none;
+    @apply inline-block px-2 py-1 mr-1 rounded border cursor-pointer;
+    &:not(.toggle),
+    &.toggle.active {
+      @apply bg-gray-700;
     }
   }
 }

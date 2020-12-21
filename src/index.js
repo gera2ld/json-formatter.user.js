@@ -1,4 +1,5 @@
 import css from './style.css';
+import theme from './material-darker.css';
 
 const React = VM;
 
@@ -14,6 +15,12 @@ const formatter = {
     title: ',',
     def: true,
   }],
+};
+const classMap = {
+  boolean: 'cm-atom',
+  null: 'cm-atom',
+  number: 'cm-number',
+  string: 'cm-string',
 };
 
 const config = {
@@ -250,9 +257,10 @@ function formatJSON() {
   formatter.formatted = true;
   formatter.data = loadJSON();
   if (!formatter.data) return;
-  formatter.style = GM_addStyle(css);
-  formatter.root = <div id="json-formatter" />;
+  document.head.innerHTML = '';
   document.body.innerHTML = '';
+  formatter.style = GM_addStyle(css + theme);
+  formatter.root = <div id="json-formatter" />;
   document.body.append(formatter.root);
   initTips();
   initMenu();
@@ -263,7 +271,7 @@ function formatJSON() {
 function generateNodes(data, container) {
   const rootSpan = <span />;
   const root = <div>{rootSpan}</div>;
-  const pre = <pre>{root}</pre>;
+  const pre = <pre className="CodeMirror cm-s-material-darker">{root}</pre>;
   formatter.pre = pre;
   const queue = [{ el: rootSpan, elBlock: root, ...data }];
   while (queue.length) {
@@ -280,8 +288,12 @@ function generateNodes(data, container) {
       const { type, color } = content;
       if (type === 'string') el.append(createQuote());
       if (color) el.append(<span className="color" style={`background-color: ${content.data}`} />);
+      const className = [
+        classMap[type],
+        'item',
+      ].filter(Boolean).join(' ');
       el.append((
-        <span className={`${type} item`} data-type={type} data-value={toString(content)}>
+        <span className={className} data-type={type} data-value={toString(content)}>
           {toString(content)}
         </span>
       ));
@@ -341,7 +353,7 @@ function generateObject({ el, elBlock, content }) {
     const elChild = (
       <div>
         {createQuote()}
-        <span className="key item" data-type={key.type}>{key.data}</span>
+        <span className="cm-property item" data-type={key.type}>{key.data}</span>
         {createQuote()}
         {': '}
         {elValue}
