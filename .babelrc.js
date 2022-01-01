@@ -3,7 +3,9 @@ module.exports = {
   presets: [
   ],
   plugins: [
-    // JSX
-    '@babel/plugin-transform-react-jsx',
+    ['@babel/plugin-transform-react-jsx', {
+      pragma: 'VM.hm',
+      pragmaFrag: 'VM.Fragment',
+    }],
   ].filter(Boolean),
 };
