@@ -1,20 +1,11 @@
 import css from './style.css';
-import theme from './material-darker.css';
-
-const React = VM;
+import darkTheme from 'https://cdn.jsdelivr.net/npm/codemirror@5.65.0/theme/material-darker.css';
+import lightTheme from 'https://cdn.jsdelivr.net/npm/codemirror@5.65.0/theme/neo.css';
 
 const gap = 5;
 
 const formatter = {
-  options: [{
-    key: 'show-quotes',
-    title: '"',
-    def: true,
-  }, {
-    key: 'show-commas',
-    title: ',',
-    def: true,
-  }],
+  options: [],
 };
 const classMap = {
   boolean: 'cm-atom',
@@ -31,10 +22,19 @@ const config = {
   ...GM_getValue('config'),
 };
 
-if (testRules([
-  // text/javascript - file:///foo/bar.js
-  /^(?:text|application)\/(?:.*?\+)?(?:plain|json|javascript)$/,
-], document.contentType)) formatJSON();
+const themes = ['Auto', 'Dark', 'Light'];
+const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+if (
+  testRules(
+    [
+      // text/javascript - file:///foo/bar.js
+      /^(?:text|application)\/(?:.*?\+)?(?:plain|json|javascript)$/,
+    ],
+    document.contentType
+  )
+)
+  formatJSON();
 GM_registerMenuCommand('Toggle JSON format', formatJSON);
 
 function testRules(rules, contentType) {
@@ -61,17 +61,17 @@ function isColor(str) {
 }
 
 function tokenize(raw) {
-  const skipWhitespace = index => {
+  const skipWhitespace = (index) => {
     while (index < raw.length && ' \t\r\n'.includes(raw[index])) index += 1;
     return index;
   };
-  const expectIndex = index => {
+  const expectIndex = (index) => {
     if (index < raw.length) return index;
     throw new Error('Unexpected end of input');
   };
   const expectChar = (index, white, black) => {
     const ch = raw[index];
-    if (white && !white.includes(ch) || black && black.includes(ch)) {
+    if ((white && !white.includes(ch)) || (black && black.includes(ch))) {
       throw new Error(`Unexpected token "${ch}" at ${index}`);
     }
     return ch;
@@ -88,7 +88,7 @@ function tokenize(raw) {
     expectChar(i, white, black);
     return i;
   };
-  const parseString = start => {
+  const parseString = (start) => {
     let j;
     for (j = start + 1; true; j = expectIndex(j + 1)) {
       const ch = raw[j];
@@ -147,9 +147,9 @@ function tokenize(raw) {
         j,
         // there must be at least one digit
         // dot must not be the last character of a number, expecting a digit
-        j === i || dot >= 0 && dot === j - 1 ? DIGITS : null,
+        j === i || (dot >= 0 && dot === j - 1) ? DIGITS : null,
         // there can be at most one dot
-        !fractional || dot >= 0 ? '.' : null,
+        !fractional || dot >= 0 ? '.' : null
       );
       if (ch === '.') dot = j;
       else if (!DIGITS.includes(ch)) break;
@@ -226,8 +226,7 @@ function tokenize(raw) {
   return result;
 }
 
-function loadJSON() {
-  const raw = document.body.innerText;
+function loadJSON(raw) {
   try {
     // JSON
     const content = tokenize(raw);
@@ -255,11 +254,17 @@ function loadJSON() {
 function formatJSON() {
   if (formatter.formatted) return;
   formatter.formatted = true;
-  formatter.data = loadJSON();
+  formatter.data = loadJSON(document.body.textContent);
   if (!formatter.data) return;
   document.head.innerHTML = '';
   document.body.innerHTML = '';
-  formatter.style = GM_addStyle(css + theme);
+  formatter.style = GM_addStyle(
+    [
+      css,
+      darkTheme.replace(/\.cm-s-material-darker/g, 'body.dark '),
+      lightTheme.replace(/\.cm-s-neo/g, 'body:not(.dark) '),
+    ].join('\n')
+  );
   formatter.root = <div id="json-formatter" />;
   document.body.append(formatter.root);
   initTips();
@@ -271,14 +276,12 @@ function formatJSON() {
 function generateNodes(data, container) {
   const rootSpan = <span />;
   const root = <div>{rootSpan}</div>;
-  const pre = <pre className="CodeMirror cm-s-material-darker">{root}</pre>;
+  const pre = <pre className="CodeMirror">{root}</pre>;
   formatter.pre = pre;
   const queue = [{ el: rootSpan, elBlock: root, ...data }];
   while (queue.length) {
     const item = queue.shift();
-    const {
-      el, content, prefix, suffix,
-    } = item;
+    const { el, content, prefix, suffix } = item;
     if (prefix) el.append(prefix);
     if (content.type === 'array') {
       queue.push(...generateArray(item));
@@ -288,18 +291,18 @@ function generateNodes(data, container) {
       const { type, color } = content;
       const children = [];
       if (type === 'string') children.push(createQuote());
-      if (color) children.push(<span className="color" style={`background-color: ${content.data}`} />);
+      if (color)
+        children.push(
+          <span className="color" style={`background-color: ${content.data}`} />
+        );
       children.push(toString(content));
       if (type === 'string') children.push(createQuote());
-      const className = [
-        classMap[type],
-        'item',
-      ].filter(Boolean).join(' ');
-      el.append((
+      const className = [classMap[type], 'item'].filter(Boolean).join(' ');
+      el.append(
         <span className={className} data-type={type} data-value={content.data}>
           {children}
         </span>
-      ));
+      );
     }
     if (suffix) el.append(suffix);
   }
@@ -316,7 +319,7 @@ function setFolder(el, length) {
     el.classList.add('complex');
     el.append(
       <div className="folder">{'\u25b8'}</div>,
-      <span className="summary">{`// ${length} items`}</span>,
+      <span className="summary">{`// ${length} items`}</span>
     );
   }
 }
@@ -327,7 +330,7 @@ function generateArray({ el, elBlock, content }) {
   el.append(
     <span className="bracket">[</span>,
     elContent || ' ',
-    <span className="bracket">]</span>,
+    <span className="bracket">]</span>
   );
   return content.data.map((item, i) => {
     const elValue = <span />;
@@ -348,7 +351,7 @@ function generateObject({ el, elBlock, content }) {
   el.append(
     <span className="bracket">{'{'}</span>,
     elContent || ' ',
-    <span className="bracket">{'}'}</span>,
+    <span className="bracket">{'}'}</span>
   );
   return content.data.map(({ key, value }, i) => {
     const elValue = <span />;
@@ -393,10 +396,24 @@ function initMenu() {
       updateView();
     }
   };
-  formatter.root.append((
+  const initTheme = setTheme(GM_getValue('theme'));
+  formatter.root.append(
     <div className="menu" onClick={handleMenuClick}>
-      <span onClick={handleCopy}>Copy</span>
-      {formatter.options.map(item => (
+      <span>
+        {'Theme: '}
+        <select
+          value={initTheme}
+          onChange={(e) => handleThemeChange(e.target.value)}
+        >
+          {themes.map((v) => (
+            <option>{v}</option>
+          ))}
+        </select>
+      </span>
+      <span className="menu-button" onClick={handleCopy}>
+        Copy
+      </span>
+      {formatter.options.map((item) => (
         <span
           className={`toggle${config[item.key] ? ' active' : ''}`}
           dangerouslySetInnerHTML={{ __html: item.title }}
@@ -404,11 +421,18 @@ function initMenu() {
         />
       ))}
     </div>
-  ));
+  );
 }
 
 function initTips() {
-  const tips = <div className="tips" onClick={(e) => { e.stopPropagation(); }} />;
+  const tips = (
+    <div
+      className="tips"
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
+    />
+  );
   const hide = () => removeEl(tips);
   document.addEventListener('click', hide, false);
   formatter.tips = {
@@ -423,9 +447,11 @@ function initTips() {
         tips.style.top = `${rect.bottom + scrollTop + gap}px`;
         tips.style.bottom = '';
       } else {
-        ([rect] = rects);
+        [rect] = rects;
         tips.style.top = '';
-        tips.style.bottom = `${formatter.root.offsetHeight - rect.top - scrollTop + gap}px`;
+        tips.style.bottom = `${
+          formatter.root.offsetHeight - rect.top - scrollTop + gap
+        }px`;
       }
       tips.style.left = `${rect.left}px`;
       const { type, value } = range.startContainer.dataset;
@@ -433,7 +459,7 @@ function initTips() {
       tips.append(
         <span className="tips-key">type</span>,
         ': ',
-        <span className="tips-val" dangerouslySetInnerHTML={{ __html: type }} />,
+        <span className="tips-val" dangerouslySetInnerHTML={{ __html: type }} />
       );
       if (type === 'string') {
         const handleCopyParsed = () => {
@@ -441,12 +467,21 @@ function initTips() {
         };
         tips.append(
           <br />,
-          <span className="tips-link" onClick={handleCopyParsed}>Copy parsed</span>,
+          <span className="tips-link" onClick={handleCopyParsed}>
+            Copy parsed
+          </span>
         );
         if (/^(https?|ftps?):\/\/\S+/.test(value)) {
           tips.append(
             <br />,
-            <a className="tips-link" href={value} target="_blank" rel="noopener noreferrer">Open link</a>,
+            <a
+              className="tips-link"
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open link
+            </a>
           );
         }
       }
@@ -466,16 +501,46 @@ function selectNode(node) {
 }
 
 function bindEvents() {
-  formatter.root.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const { target } = e;
-    if (target.classList.contains('item')) {
-      formatter.tips.show(selectNode(target));
-    } else {
-      formatter.tips.hide();
-    }
-    if (target.classList.contains('folder')) {
-      target.parentNode.classList.toggle('collapse');
-    }
-  }, false);
+  formatter.root.addEventListener(
+    'click',
+    (e) => {
+      e.stopPropagation();
+      const { target } = e;
+      if (target.classList.contains('item')) {
+        formatter.tips.show(selectNode(target));
+      } else {
+        formatter.tips.hide();
+      }
+      if (target.classList.contains('folder')) {
+        target.parentNode.classList.toggle('collapse');
+      }
+    },
+    false
+  );
+}
+
+function setDarkMode(dark) {
+  if (dark) document.body.classList.add('dark');
+  else document.body.classList.remove('dark');
+}
+
+function handleMediaChange(e) {
+  setDarkMode(e.matches);
+}
+
+function setTheme(theme) {
+  if (!themes.includes(theme)) theme = themes[0];
+  if (theme !== 'Auto') {
+    mediaQuery.removeEventListener('change', handleMediaChange);
+    setDarkMode(theme === 'Dark');
+  } else {
+    mediaQuery.addEventListener('change', handleMediaChange);
+    setDarkMode(mediaQuery.matches);
+  }
+  return theme;
+}
+
+function handleThemeChange(theme) {
+  theme = setTheme(theme);
+  GM_setValue('theme', theme);
 }
