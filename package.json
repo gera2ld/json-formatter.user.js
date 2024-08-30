@@ -4,26 +4,49 @@
   "description": "JSON Formatter",
   "author": "Gerald <gera2ld@live.com>",
   "license": "ISC",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "postinstall": "husky install",
-    "dev": "rollup -wc rollup.conf.js",
-    "build": "run-s lint clean build:js",
-    "lint": "eslint .",
+    "prepare": "husky",
+    "dev": "rollup -wc",
     "clean": "del-cli dist",
-    "build:js": "rollup -c rollup.conf.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint --ext .ts,.tsx --fix . && prettier --ignore-path .eslintignore --write .",
+    "ci": "run-s lint",
+    "build:js": "rollup -c",
+    "build": "run-s lint clean build:js",
+    "postinstall": "husky install",
     "prepublishOnly": "npm run build"
   },
-  "repository": "git@github.com:gera2ld/json-formatter.git",
-  "devDependencies": {
-    "@babel/plugin-transform-react-jsx": "^7.16.7",
-    "@gera2ld/plaid": "~2.5.0",
-    "@gera2ld/plaid-rollup": "~2.5.0",
-    "del-cli": "^4.0.1",
-    "husky": "^7.0.4",
-    "rollup-plugin-userscript": "^0.1.1"
-  },
   "dependencies": {
-    "@babel/runtime": "^7.16.7",
-    "@violentmonkey/dom": "^2.1.0"
-  }
+    "@babel/runtime": "^7.25.6",
+    "@violentmonkey/dom": "^2.1.7",
+    "@violentmonkey/ui": "^0.7.9",
+    "solid-js": "^1.8.22"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.25.2",
+    "@gera2ld/plaid": "~2.7.0",
+    "@gera2ld/plaid-rollup": "~2.7.0",
+    "@unocss/postcss": "^0.62.3",
+    "@violentmonkey/types": "^0.1.9",
+    "babel-preset-solid": "^1.8.22",
+    "cross-env": "^7.0.3",
+    "del-cli": "^5.1.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.5",
+    "lint-staged": "^15.2.9",
+    "prettier": "^3.3.3",
+    "rollup-plugin-userscript": "^0.3.4",
+    "unocss": "^0.62.3"
+  },
+  "lint-staged": {
+    "src/**": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "repository": "git@github.com:gera2ld/json-formatter.git"
 }
