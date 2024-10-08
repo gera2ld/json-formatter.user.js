@@ -9,16 +9,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          persist-credentials: false
-      - uses: actions/setup-node@v2-beta
+          node-version: '22'
+      - uses: pnpm/action-setup@v4
         with:
-          node-version: '14'
-      - name: Install deps
-        run: yarn
+          version: 9
       - name: Build
-        run: yarn build
+        run: pnpm i && pnpm build
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
