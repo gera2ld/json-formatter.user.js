@@ -5,7 +5,7 @@
 // @icon              http://cn.gravatar.com/avatar/a0ad718d86d21262ccd6ff271ece08a3?s=80
 // @description       Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version           2.0.10
+// @version           2.0.11
 // @require           https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @match             *://*/*
 // @match             file:///*
@@ -36,7 +36,7 @@ function formatJSON() {
   const content = JSON.parse(document.body.textContent);
   document.body.innerHTML = '';
   iframe = GM_addElement(document.body, 'iframe', {
-    sandbox: 'allow-scripts',
+    sandbox: 'allow-scripts allow-same-origin',
     src: 'https://json.gera2ld.space/embed',
     style: `position:fixed;width:100vw;height:100vh;inset:0;border:none`
   });
