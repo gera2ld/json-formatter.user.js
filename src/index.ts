@@ -36,6 +36,10 @@ function formatJSON() {
   }) as HTMLIFrameElement;
   const setData = () => {
     iframe.contentWindow.postMessage(
+      { type: 'setReadOnly', payload: true },
+      '*',
+    );
+    iframe.contentWindow.postMessage(
       { type: 'setData', payload: content },
       '*',
     );
