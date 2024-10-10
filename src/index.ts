@@ -30,7 +30,7 @@ function formatJSON() {
   const content = JSON.parse(document.body.textContent);
   document.body.innerHTML = '';
   iframe = GM_addElement(document.body, 'iframe', {
-    sandbox: 'allow-scripts',
+    sandbox: 'allow-scripts allow-same-origin',
     src: 'https://json.gera2ld.space/embed',
     style: `position:fixed;width:100vw;height:100vh;inset:0;border:none`,
   }) as HTMLIFrameElement;
