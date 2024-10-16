@@ -31,7 +31,7 @@ function formatJSON() {
   document.body.innerHTML = '';
   iframe = GM_addElement(document.body, 'iframe', {
     sandbox: 'allow-scripts allow-same-origin',
-    src: 'https://json.gera2ld.space/embed',
+    src: 'https://json.pore.run/embed',
     style: `position:fixed;width:100vw;height:100vh;inset:0;border:none`,
   }) as HTMLIFrameElement;
   const setData = () => {
