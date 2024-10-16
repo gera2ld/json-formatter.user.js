@@ -91,9 +91,23 @@ async function handleViewerAfterRedirection() {
       }
     });
   });
-  handleInitData(content, window, jsonUrl);
-  window.addEventListener('load', () => {
+  const setData = () => {
     handleInitData(content, window, jsonUrl);
+  };
+  window.addEventListener('load', () => {
+    setData();
+  });
+  window.addEventListener('message', e => {
+    const {
+      type
+    } = e.data;
+    switch (type) {
+      case 'ready':
+        {
+          setData();
+          break;
+        }
+    }
   });
 }
 function handleInitData(content, window, jsonUrl) {
