@@ -1,6 +1,6 @@
 import './meta.js?userscript-metadata';
 
-const JSON_VIEWER_EMBED = 'https://json.pore.run/embed';
+const JSON_VIEWER_EMBED = 'https://rally.pore.run/embed';
 
 let iframe: HTMLIFrameElement | undefined;
 
