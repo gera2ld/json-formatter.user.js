@@ -5,7 +5,7 @@
 // @icon              http://cn.gravatar.com/avatar/a0ad718d86d21262ccd6ff271ece08a3?s=80
 // @description       Format JSON data in a beautiful way.
 // @description:zh-CN 更加漂亮地显示JSON数据。
-// @version           2.0.12
+// @version           2.0.13
 // @require           https://cdn.jsdelivr.net/npm/@violentmonkey/dom@2
 // @match             *://*/*
 // @match             file:///*
@@ -17,7 +17,7 @@
 (function () {
 'use strict';
 
-const JSON_VIEWER_EMBED = 'https://json.pore.run/embed';
+const JSON_VIEWER_EMBED = 'https://rally.pore.run/embed';
 let iframe;
 if (window === window.top && window.location.origin + window.location.pathname === JSON_VIEWER_EMBED) {
   handleViewerAfterRedirection();
