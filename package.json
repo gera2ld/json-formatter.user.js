@@ -9,42 +9,68 @@
     "node": ">=20"
   },
   "scripts": {
-    "prepare": "husky",
+    "prepare": "husky || true",
     "dev": "rollup -wc",
     "clean": "del-cli dist",
     "lint": "eslint .",
-    "lint:fix": "eslint --ext .ts,.tsx --fix . && prettier --ignore-path .eslintignore --write .",
-    "ci": "run-s lint",
+    "lint:fix": "eslint --fix . && prettier --write src",
+    "ci": "pnpm lint",
     "build:js": "rollup -c",
-    "build": "run-s lint clean build:js",
-    "postinstall": "husky install",
-    "prepublishOnly": "npm run build"
+    "build": "pnpm lint && pnpm clean && pnpm build:js"
   },
   "dependencies": {
-    "@babel/runtime": "^7.27.0",
+    "@babel/runtime": "^7.27.6",
     "@violentmonkey/dom": "^2.2.1",
     "@violentmonkey/ui": "^0.7.9",
-    "solid-js": "^1.9.5"
+    "solid-js": "^1.9.7"
   },
   "devDependencies": {
-    "@babel/plugin-transform-react-jsx": "^7.25.9",
-    "@gera2ld/plaid": "~2.7.0",
-    "@gera2ld/plaid-rollup": "~2.7.0",
-    "@unocss/postcss": "^66.0.0",
-    "@violentmonkey/types": "^0.2.0",
-    "babel-preset-solid": "^1.9.5",
+    "@babel/core": "^7.27.7",
+    "@babel/plugin-transform-react-jsx": "^7.27.1",
+    "@babel/plugin-transform-runtime": "^7.27.4",
+    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-typescript": "^7.27.1",
+    "@eslint/js": "^9.29.0",
+    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-replace": "^6.0.2",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@types/eslint": "^9.6.1",
+    "@typescript-eslint/eslint-plugin": "^8.35.0",
+    "@typescript-eslint/parser": "^8.35.0",
+    "@unocss/postcss": "^66.3.2",
+    "@violentmonkey/types": "^0.2.2",
+    "autoprefixer": "^10.4.21",
+    "babel-preset-solid": "^1.9.6",
     "cross-env": "^7.0.3",
     "del-cli": "^6.0.0",
-    "eslint-config-prettier": "^10.1.1",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.5",
+    "globals": "^16.2.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.0",
-    "prettier": "^3.5.3",
+    "lint-staged": "^16.1.2",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.5.6",
+    "postcss-calc": "^10.1.1",
+    "postcss-nested": "^7.0.2",
+    "prettier": "^3.6.1",
+    "read-package-up": "^11.0.0",
+    "rollup": "^4.44.1",
+    "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-userscript": "^0.3.7",
-    "unocss": "^66.0.0"
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.35.0",
+    "unocss": "^66.3.2"
   },
   "lint-staged": {
-    "src/**": [
+    "*.{ts,tsx}": [
       "eslint --fix",
+      "prettier --write"
+    ],
+    "*.css": [
       "prettier --write"
     ]
   },

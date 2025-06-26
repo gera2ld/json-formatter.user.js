@@ -15,13 +15,11 @@ jobs:
           node-version: '22'
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
       - name: Build
         run: pnpm i && pnpm build
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@releases/v3
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_BRANCH: master
-          BRANCH: release
-          FOLDER: dist
+          branch: release
+          folder: dist
