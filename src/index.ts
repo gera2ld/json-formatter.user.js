@@ -39,7 +39,7 @@ function handleViewerIframe() {
   const content = JSON.parse(document.body.textContent);
   document.body.innerHTML = '';
   iframe = GM_addElement(document.body, 'iframe', {
-    sandbox: 'allow-scripts allow-same-origin',
+    sandbox: 'allow-scripts allow-same-origin allow-popups',
     src: JSON_VIEWER_EMBED,
     style: `position:fixed;width:100vw;height:100vh;inset:0;border:none`,
   }) as HTMLIFrameElement;
